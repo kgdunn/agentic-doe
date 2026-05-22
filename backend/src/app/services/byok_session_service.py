@@ -12,7 +12,9 @@ Session ORM rows. Public operations:
 - :func:`orphan_dek` — mark the wraps unrecoverable on password reset.
 - :func:`enroll` — first-time enrollment: encrypt the token, generate a
   fresh DEK, wrap it under the user's password.
-- :func:`disable` — wipe all four user-side ciphertext columns.
+- :func:`disable` — clear the user-side BYOK columns (token
+  ciphertext, wrapped DEK, KEK salt, KDF params, last-verified
+  timestamp) and revert status to ``absent``.
 - :func:`record_history` — append-only audit row.
 
 This module never returns the password, the KEK, or the DEK to its
