@@ -59,16 +59,18 @@ def calculate_cost(
 ) -> dict[str, Decimal | bool]:
     """Snapshot the rates, costs, markup, and billable amount for a call.
 
-    ``byok_used`` flips two fields:
+    When ``byok_used=True`` (user's own Anthropic key), two fields are
+    forced to 0:
 
     - ``markup_cost_usd`` becomes 0 (we do not add a platform markup
       to a key that bills the user directly at Anthropic).
     - ``billable_to_user_usd`` becomes 0 (the user is billed at the
       Anthropic side; nothing flows through our balance ledger).
 
-    For platform-key turns ``markup_cost_usd = raw * (1 + markup_rate)``
-    matches the historical formula, and ``billable_to_user_usd ==
-    markup_cost_usd``. Historical rows on disk continue to satisfy
+    When ``byok_used=False`` (platform key, the default), both
+    ``markup_cost_usd`` and ``billable_to_user_usd`` are set to
+    ``raw * (1 + markup_rate)``, matching the historical formula.
+    Historical rows on disk continue to satisfy
     ``billable_to_user_usd == markup_cost_usd`` because they were all
     written under that branch.
 
