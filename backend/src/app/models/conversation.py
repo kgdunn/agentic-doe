@@ -74,11 +74,11 @@ class Conversation(Base):
     starred: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     # Timestamps
-    created_at: Mapped[str] = mapped_column(
+    created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )
-    updated_at: Mapped[str] = mapped_column(
+    updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
@@ -154,7 +154,7 @@ class Message(Base):
     byok_used: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     # Timestamps
-    created_at: Mapped[str] = mapped_column(
+    created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )
@@ -232,7 +232,7 @@ class ToolCall(Base):
     tool_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Timestamps
-    created_at: Mapped[str] = mapped_column(
+    created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )

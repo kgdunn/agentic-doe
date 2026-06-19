@@ -14,6 +14,7 @@ redeemed.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -38,10 +39,10 @@ class SetupToken(Base):
     token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     purpose: Mapped[str] = mapped_column(String(20))
 
-    expires_at: Mapped[str] = mapped_column(DateTime(timezone=True))
-    used_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    created_at: Mapped[str] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )
