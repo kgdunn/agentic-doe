@@ -59,6 +59,12 @@ async def submit_feedback(
     current_user: AuthUser = Depends(require_auth),
     db: AsyncSession = Depends(get_db_session),
 ) -> FeedbackSubmitResponse:
+    """Record a feedback submission from the authenticated user.
+
+    On success a background task delivers an email confirmation to the
+    submitter and a notification to every active admin, so the HTTP
+    response is not held up by SMTP.
+    """
     user = await get_user_by_id(db, current_user.id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
