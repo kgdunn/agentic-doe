@@ -56,7 +56,12 @@ async def list_tools(
     _user: AuthUser = Depends(require_auth),
     category: str | None = None,
 ) -> ToolListResponse:
-    """Return the registered tool specs in Anthropic-compatible format."""
+    """Return the registered tool specs in Anthropic-compatible format.
+
+    The optional ``category`` query parameter filters the returned
+    specs to only those whose registered category matches (e.g.
+    ``"experiments"``). Omitting it returns every registered tool.
+    """
     return ToolListResponse(tools=get_tool_specs(category=category))
 
 
