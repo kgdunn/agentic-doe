@@ -77,8 +77,19 @@ async def chat(
     """Start or continue a conversation with the DOE agent.
 
     Accepts a user message and optional ``conversation_id``.
-    Returns an SSE stream with events: ``conversation_id``, ``token``,
-    ``tool_start``, ``tool_result``, ``done``, and ``error``.
+    Returns an SSE stream. Emitted event types:
+
+    - ``conversation_id`` — first event, carries ``conversation_id`` and ``turn_id``.
+    - ``phase`` — coarse turn-progress markers (``thinking``, ``streaming``,
+      ``calling_tool``, ``finalizing``).
+    - ``plan`` / ``plan_update`` — agent-authored plan snapshots and step-status
+      transitions produced by the ``record_plan`` / ``update_plan`` tools.
+    - ``token`` — streamed assistant text deltas.
+    - ``tool_start`` / ``tool_result`` — per tool-call lifecycle events.
+    - ``experiment_created`` / ``simulator_created`` — post-commit notifications
+      for auto-persisted experiments and simulators.
+    - ``done`` — normal turn completion.
+    - ``error`` — turn ended in failure.
     """
     byok_token = await _resolve_byok_token(current_user)
     return EventSourceResponse(
