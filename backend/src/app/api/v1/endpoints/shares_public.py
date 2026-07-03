@@ -86,7 +86,15 @@ async def get_public_experiment(
 async def export_public_experiment(
     request: Request,
     token: str,
-    format: ExportFormat = Query(..., description="Output format: pdf, xlsx, csv, md"),
+    format: ExportFormat = Query(
+        ...,
+        description=(
+            "Output format: pdf, xlsx, csv, md, py, ipynb, md_code, zip. "
+            "Only pdf/xlsx/csv/md are exposed on public shares; the "
+            "reproducible code formats (py, ipynb, md_code, zip) yield 403 "
+            "because they carry raw tool inputs and belong behind auth."
+        ),
+    ),
     db: AsyncSession = Depends(get_db_session),
 ) -> Response:
     """Stream an export of the shared experiment in the requested format.

@@ -7,7 +7,8 @@ This is a REST shim, not full MCP streamable-HTTP protocol. Fully
 compliant MCP transport can be layered on top later; for now we focus
 on the security envelope:
 
-- Auth: requires JWT or the shared ``X-API-Key`` (via ``require_auth``).
+- Auth: requires an opaque session cookie or the shared ``X-API-Key``
+  header (via ``require_auth``); there is no JWT in this stack.
 - Rate: slowapi IP-based limit (``settings.mcp_rate_limit``).
 - Budget: per-identity daily CPU-second quota (``tool_usage`` table).
 - Isolation: tool execution runs off the event loop in a forked
@@ -55,7 +56,12 @@ async def list_tools(
     _user: AuthUser = Depends(require_auth),
     category: str | None = None,
 ) -> ToolListResponse:
-    """Return the registered tool specs in Anthropic-compatible format."""
+    """Return the registered tool specs in Anthropic-compatible format.
+
+    The optional ``category`` query parameter filters the returned
+    specs to only those whose registered category matches (e.g.
+    ``"experiments"``). Omitting it returns every registered tool.
+    """
     return ToolListResponse(tools=get_tool_specs(category=category))
 
 
