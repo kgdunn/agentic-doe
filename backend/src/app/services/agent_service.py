@@ -506,11 +506,20 @@ async def run_chat(
     The DB session is managed inside the generator (not via ``Depends``)
     so its lifetime matches the SSE stream.
 
-    Every SSE event yielded by this generator carries an ``id:`` of the
-    form ``{turn_id}:{sequence}`` and is persisted to ``chat_events``
-    before being yielded, so a disconnected client can replay missed
-    events via the resume endpoint using the standard SSE
-    ``Last-Event-ID`` header.
+    Most SSE events yielded by this generator carry an ``id:`` of the
+    form ``{turn_id}:{sequence}`` and are persisted to ``chat_events``,
+    so a disconnected client can replay missed events via the resume
+    endpoint using the standard SSE ``Last-Event-ID`` header. Two
+    intentional exceptions to that guarantee:
+
+    - Streamed ``token`` deltas are coalesced into a batched
+      ``chat_events`` row that is written *after* the individual delta
+      is yielded live, so a very fresh delta may be visible to the
+      client before it has landed in the resume log.
+    - If the outer ``except`` fires (an unhandled failure during turn
+      orchestration), a best-effort ``error`` event is yielded without
+      an ``id:``/``chat_events`` row so the connected client still sees
+      the failure even when persistence itself is what broke.
     """
     system_prompt = _build_system_prompt(user_background, detail_level)
 
