@@ -9,7 +9,8 @@ Lifecycle:
   and CSRF value to be ``Set-Cookie``-d by the caller.
 - ``lookup_session_by_cookie`` validates the cookie and returns the row
   if it's still alive (not revoked, not idle-expired, not absolute-
-  expired), and write-throttles ``last_used_at`` to once a minute to
+  expired), and write-throttles ``last_used_at`` to once a minute (and
+  slides ``idle_expires_at`` forward on the same throttled write) to
   avoid amplifying writes on hot paths.
 - ``revoke_session`` revokes a single session; ``revoke_family`` revokes
   every session in the same family (sign-out-everywhere).

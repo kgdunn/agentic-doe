@@ -55,8 +55,12 @@ async def _byok_wraps_for_login(user: User, password: str) -> tuple[bytes | None
 def _client_ip(request: Request) -> str | None:
     """Return the caller's IP, honouring a single ``X-Forwarded-For`` hop.
 
-    We only trust the left-most XFF entry when a reverse proxy (Caddy/nginx)
-    is in front. In dev there is no proxy, so ``request.client.host`` is used.
+    The left-most ``X-Forwarded-For`` entry is honoured whenever the
+    header is present; ``request.client.host`` is only consulted as a
+    fallback when no XFF header is set. Note that this trust is
+    unconditional — deployments without a stripping reverse proxy
+    (Caddy/nginx) in front should not expose the app directly, since a
+    client-supplied XFF header would otherwise be believed as-is.
     """
     fwd = request.headers.get("x-forwarded-for")
     if fwd:
