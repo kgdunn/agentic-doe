@@ -1,6 +1,6 @@
 """Service helpers for the ``admin_events`` operational log.
 
-Three thin helpers the rest of the app (and the backup/restore shell
+Four thin helpers the rest of the app (and the backup/restore shell
 scripts, via the ``admin-event`` CLI subcommand) call into:
 
 - ``start_event`` — insert an ``in_progress`` row, return its id.
@@ -9,6 +9,8 @@ scripts, via the ``admin-event`` CLI subcommand) call into:
   ``completed_at`` / ``duration_ms``.
 - ``log_snapshot`` — insert a single-row ``info`` event (user counts,
   token usage, etc.).
+- ``list_events`` — paginated event list for the admin dashboard,
+  filterable by ``event_type`` / ``status``.
 
 Timestamps are Python-side UTC so ``duration_ms`` can be computed
 without a round-trip refresh.
