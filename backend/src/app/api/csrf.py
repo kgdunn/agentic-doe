@@ -30,15 +30,24 @@ _PROTECTED_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 async def require_csrf(request: Request) -> None:
     """Reject state-changing requests without a matching CSRF token.
 
-    Skipped for safe methods, for the API-key path (machine-to-machine,
-    no cookie involved), and for the unauthenticated public-share routes
-    which carry their own opaque tokens.
+    Two carve-outs live inside this function:
+
+    * Safe HTTP methods (anything outside ``_PROTECTED_METHODS``) return
+      immediately — GET / HEAD / OPTIONS are read-only and CSRF-safe.
+    * Requests presenting an ``X-API-Key`` header return immediately.
+      API-key clients don't have a session cookie and don't need CSRF:
+      the header itself is the credential and is not browser-replayable.
+
+    The unauthenticated public-share routes are also CSRF-exempt, but
+    that exemption is enforced at the router level (see
+    ``api/v1/router.py`` — the ``shares_public`` router is mounted
+    without a ``Depends(require_csrf)`` guard), not by any branch in
+    this function. From this function's point of view every request it
+    actually sees must satisfy one of the two conditions above.
     """
     if request.method not in _PROTECTED_METHODS:
         return
 
-    # API-key clients don't have a session cookie and don't need CSRF —
-    # the header itself is the credential and is not browser-replayable.
     if request.headers.get("X-API-Key"):
         return
 

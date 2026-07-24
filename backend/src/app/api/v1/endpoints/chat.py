@@ -76,9 +76,25 @@ async def chat(
 ) -> EventSourceResponse:
     """Start or continue a conversation with the DOE agent.
 
-    Accepts a user message and optional ``conversation_id``.
-    Returns an SSE stream with events: ``conversation_id``, ``token``,
-    ``tool_start``, ``tool_result``, ``done``, and ``error``.
+    Accepts a user message and optional ``conversation_id``. Returns an
+    SSE stream. Event types the underlying ``run_chat`` generator may
+    emit (see ``services/agent_service.py`` and ``services/agent_loop.py``):
+
+    * ``conversation_id`` — first event; carries the resolved
+      ``conversation_id`` and this turn's ``turn_id`` so the frontend
+      can construct a resume URL.
+    * ``phase`` — lifecycle marker: ``thinking`` (waiting on the
+      Anthropic API), ``streaming`` (tokens flowing), ``calling_tool``
+      (per tool invocation), ``finalizing`` (after the last turn).
+    * ``token`` — one per text delta.
+    * ``plan`` / ``plan_update`` — emitted when the agent calls the
+      local meta tools ``record_plan`` / ``update_plan``; rendered as
+      inline plan UI rather than as tool cards.
+    * ``tool_start`` / ``tool_result`` — one pair per real tool call.
+    * ``experiment_created`` / ``simulator_created`` — post-commit
+      notifications with the persisted row IDs.
+    * ``done`` — terminal on success.
+    * ``error`` — terminal on failure.
     """
     byok_token = await _resolve_byok_token(current_user)
     return EventSourceResponse(
@@ -243,8 +259,24 @@ async def get_conversation_messages(
 ) -> dict[str, Any]:
     """Load conversation messages for resuming a chat session.
 
-    Returns messages formatted as the frontend's ``ChatMessage[]``
-    structure with content blocks (text, tool_use, tool_result).
+    Returns a ``dict`` with the shape::
+
+        {
+            "conversation_id": str,   # stringified UUID
+            "title": str,             # Conversation.title
+            "messages": list[dict],   # frontend ChatMessage[] shape,
+                                      # grouped into text / tool_use /
+                                      # tool_result content blocks
+            "byok_used": bool,        # True if any Message row in this
+                                      # conversation was billed against
+                                      # a user-supplied Anthropic key
+        }
+
+    Each entry in ``messages`` carries ``id`` (stringified UUID),
+    ``role`` (``user`` / ``assistant``), ``timestamp`` (ISO string or
+    ``None``) and ``content`` (a list of typed blocks: ``{"type":
+    "text", "text": ...}``, ``{"type": "tool_use", ...}``, or
+    ``{"type": "tool_result", ...}``).
     """
     conversation = await db.get(Conversation, conversation_id)
     if not conversation:

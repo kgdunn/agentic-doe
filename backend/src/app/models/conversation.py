@@ -100,10 +100,17 @@ class Message(Base):
     """A single message (or content block) within a conversation.
 
     Stores user text, assistant text, tool_use blocks, and tool_result
-    entries.  The ``sequence`` column determines ordering.  Tool-related
-    fields (``tool_use_id``, ``tool_name``, ``tool_input``) are populated
-    for assistant tool_use blocks and their corresponding tool_result
-    entries.
+    entries.  The ``sequence`` column determines ordering. Tool-related
+    fields split by row kind (see
+    ``services/agent_service.py::_persist_new_messages``):
+
+    * Assistant ``tool_use`` rows populate all three of
+      ``tool_use_id``, ``tool_name`` and ``tool_input`` and set
+      ``is_tool_result=False``.
+    * ``tool_result`` rows (role ``user``, ``is_tool_result=True``)
+      populate ``tool_use_id`` only; ``tool_name`` and ``tool_input``
+      are NULL. The tool name can be recovered by joining back to the
+      matching assistant row via ``tool_use_id``.
     """
 
     __tablename__ = "messages"
