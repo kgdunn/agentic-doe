@@ -300,7 +300,20 @@ async def _persist_new_messages(
     new_messages: list[dict[str, Any]],
     start_sequence: int,
 ) -> dict[str, uuid.UUID]:
-    """Persist new assistant / tool_result messages.  Returns a map of tool_use_id -> Message.id."""
+    """Persist new assistant / tool_result messages.
+
+    Returns a map of ``tool_use_id -> Message.id`` (populated for
+    assistant tool_use blocks and used by the caller to wire
+    ``ToolCall`` audit rows to their originating message).
+
+    Side effect: for every processed message this function also
+    accumulates the per-message metadata onto the ``Conversation``
+    row — ``total_input_tokens``, ``total_output_tokens``,
+    ``total_cost_usd`` (raw Anthropic cost) and
+    ``total_markup_cost_usd`` (customer-billed cost at the markup
+    rate in force at call time). Callers must commit the surrounding
+    session for these updates to take effect.
+    """
     seq = start_sequence
     tool_use_id_to_msg_id: dict[str, uuid.UUID] = {}
 
