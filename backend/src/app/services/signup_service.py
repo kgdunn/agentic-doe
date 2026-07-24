@@ -185,8 +185,9 @@ async def complete_registration(
 ) -> User:
     """Complete registration using an invite token.
 
-    Validates the token, creates a User whose ``role_id`` is copied from
-    the signup request, and marks the signup as registered.
+    Validates the token, creates a ``User`` whose ``role_id`` is copied
+    from the signup request, creates the paired ``UserBalance`` row for
+    the new user, and marks the signup as registered.
 
     Raises
     ------
