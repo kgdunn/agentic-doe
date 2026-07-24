@@ -147,9 +147,15 @@ def orphan_dek(user: User) -> bool:
     later forensic check can confirm what the row contained, but no
     code path will try to decrypt them again.
 
-    Returns True if the user actually had an active enrollment that was
-    just orphaned, False otherwise. Idempotent — calling on an already-
-    orphaned or absent row is a no-op.
+    Returns True if the user actually had a recoverable enrollment
+    that was just orphaned, False otherwise. "Recoverable" here means
+    either ``active`` (the normal case) or ``rejected`` (Anthropic
+    rejected the last-used token but the wrapped DEK is still on the
+    row and the user could re-enrol later) — both transition to
+    ``orphaned`` because the password reset destroys the KEK derivation
+    input and the DEK becomes unrecoverable regardless of which of
+    those two states the row was in. Idempotent — calling on an
+    already-orphaned or absent row is a no-op.
     """
     if getattr(user, "byok_token_status", STATUS_ABSENT) not in (STATUS_ACTIVE, STATUS_REJECTED):
         return False
