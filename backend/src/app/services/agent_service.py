@@ -506,11 +506,24 @@ async def run_chat(
     The DB session is managed inside the generator (not via ``Depends``)
     so its lifetime matches the SSE stream.
 
-    Every SSE event yielded by this generator carries an ``id:`` of the
-    form ``{turn_id}:{sequence}`` and is persisted to ``chat_events``
-    before being yielded, so a disconnected client can replay missed
-    events via the resume endpoint using the standard SSE
-    ``Last-Event-ID`` header.
+    SSE events go through the local ``emit`` helper, which assigns each
+    event a monotonically-increasing sequence, tags it with an
+    ``id: {turn_id}:{sequence}``, and persists it to ``chat_events``
+    before yielding — so a disconnected client can replay missed events
+    via the resume endpoint using the standard SSE ``Last-Event-ID``
+    header. Two carve-outs to be aware of:
+
+    * ``token`` events are buffered inside ``emit`` and flushed to
+      ``chat_events`` as a single coalesced row (when a non-token event
+      arrives, the buffer ages past ``_TOKEN_BATCH_INTERVAL_S``, or the
+      generator finalises). Live SSE delivery is one event per token
+      as usual; only the persisted row count is reduced.
+    * A small number of early-failure branches (a missing / non-owned
+      ``conversation_id`` at lines ~593/596 and the last-ditch except
+      arm at ~787) yield via the raw ``_sse`` helper. Those events
+      carry no ``id:`` and are **not** persisted, because they either
+      fire before ``conversation`` is loaded or after the outer emit
+      path itself has failed. Clients cannot resume those turns.
     """
     system_prompt = _build_system_prompt(user_background, detail_level)
 
