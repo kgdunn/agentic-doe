@@ -51,9 +51,11 @@ def _public_status(user) -> BYOKStatusResponse:
 async def _load_user(db: AsyncSession, current_user: AuthUser):
     """Fetch the live User row for the authenticated caller.
 
-    A 404 here would be a programming error (the auth dependency just
-    confirmed the session exists), so we 500-style raise with a generic
-    message rather than leaking detail.
+    A missing row here would be a programming error (the auth
+    dependency just confirmed the session exists), so we raise
+    ``HTTPException(500)`` with ``detail="User not found"`` — the
+    situation is a server-side invariant violation, and the detail
+    string is fixed regardless of caller.
     """
     from app.models.user import User
 
