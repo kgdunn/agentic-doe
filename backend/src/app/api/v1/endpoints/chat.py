@@ -259,8 +259,24 @@ async def get_conversation_messages(
 ) -> dict[str, Any]:
     """Load conversation messages for resuming a chat session.
 
-    Returns messages formatted as the frontend's ``ChatMessage[]``
-    structure with content blocks (text, tool_use, tool_result).
+    Returns a ``dict`` with the shape::
+
+        {
+            "conversation_id": str,   # stringified UUID
+            "title": str,             # Conversation.title
+            "messages": list[dict],   # frontend ChatMessage[] shape,
+                                      # grouped into text / tool_use /
+                                      # tool_result content blocks
+            "byok_used": bool,        # True if any Message row in this
+                                      # conversation was billed against
+                                      # a user-supplied Anthropic key
+        }
+
+    Each entry in ``messages`` carries ``id`` (stringified UUID),
+    ``role`` (``user`` / ``assistant``), ``timestamp`` (ISO string or
+    ``None``) and ``content`` (a list of typed blocks: ``{"type":
+    "text", "text": ...}``, ``{"type": "tool_use", ...}``, or
+    ``{"type": "tool_result", ...}``).
     """
     conversation = await db.get(Conversation, conversation_id)
     if not conversation:
