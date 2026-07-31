@@ -30,9 +30,14 @@ _PROTECTED_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 async def require_csrf(request: Request) -> None:
     """Reject state-changing requests without a matching CSRF token.
 
-    Skipped for safe methods, for the API-key path (machine-to-machine,
-    no cookie involved), and for the unauthenticated public-share routes
-    which carry their own opaque tokens.
+    Skipped for safe HTTP methods (``GET`` / ``HEAD`` / ``OPTIONS``) and
+    for the API-key path (machine-to-machine, no cookie involved — the
+    header itself is the credential and is not browser-replayable).
+
+    Routes that should never see this dependency at all (e.g. the
+    unauthenticated public-share endpoints) simply don't wire it in at
+    the router level; that policy lives in ``api/v1/router.py``, not
+    here.
     """
     if request.method not in _PROTECTED_METHODS:
         return

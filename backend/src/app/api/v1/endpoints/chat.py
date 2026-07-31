@@ -77,8 +77,11 @@ async def chat(
     """Start or continue a conversation with the DOE agent.
 
     Accepts a user message and optional ``conversation_id``.
-    Returns an SSE stream with events: ``conversation_id``, ``token``,
-    ``tool_start``, ``tool_result``, ``done``, and ``error``.
+    Returns an SSE stream. Emitted event types include
+    ``conversation_id``, ``phase``, ``token``, ``tool_start``,
+    ``tool_result``, ``plan``, ``plan_update``,
+    ``experiment_created``, ``simulator_created``, ``done``, and
+    ``error``.
     """
     byok_token = await _resolve_byok_token(current_user)
     return EventSourceResponse(
