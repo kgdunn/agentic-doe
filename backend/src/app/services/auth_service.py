@@ -103,18 +103,13 @@ async def record_login_activity(
 ) -> None:
     """Stamp the user row with sign-in metadata.
 
-    Best-effort: GeoIP errors never surface, and IP/timezone inputs are
-    applied only when non-empty so a refresh from a mobile client without
-    timezone doesn't blank out a previously-recorded value.
+    Best-effort: IP/timezone inputs are applied only when non-empty so a
+    refresh from a mobile client without timezone doesn't blank out a
+    previously-recorded value.
     """
-    from app.services.geoip_service import lookup_country  # local import to avoid cycle
-
     user.last_login_at = datetime.now(UTC)
     if ip:
         user.last_login_ip = ip
-        country = lookup_country(ip)
-        if country:
-            user.country = country
     if timezone:
         user.timezone = timezone
     await db.flush()

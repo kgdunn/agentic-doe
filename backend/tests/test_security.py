@@ -163,7 +163,6 @@ class TestProductionSecretsValidation:
             app_env="production",
             api_secret_key="",
             postgres_password="strong",  # noqa: S106
-            neo4j_password="strong",  # noqa: S106
         )
         with pytest.raises(SystemExit, match="API_SECRET_KEY"):
             s.validate_production_secrets()
@@ -173,7 +172,6 @@ class TestProductionSecretsValidation:
             app_env="production",
             api_secret_key="ok",  # noqa: S106
             postgres_password="doe_password",  # noqa: S106
-            neo4j_password="strong",  # noqa: S106
         )
         with pytest.raises(SystemExit, match="POSTGRES_PASSWORD"):
             s.validate_production_secrets()
@@ -183,7 +181,6 @@ class TestProductionSecretsValidation:
             app_env="production",
             api_secret_key="strong-api",  # noqa: S106
             postgres_password="strong-pg",  # noqa: S106
-            neo4j_password="strong-neo",  # noqa: S106
         )
         s.validate_production_secrets()  # Should not raise
 

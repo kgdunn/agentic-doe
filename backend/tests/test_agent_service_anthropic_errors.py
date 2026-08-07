@@ -1,7 +1,7 @@
 """Verify agent_service routes Anthropic network errors through the status tracker.
 
 Exercises the synchronous inner loop directly with a stub client so we
-don't need Postgres, Neo4j, or the HTTP layer.
+don't need Postgres or the HTTP layer.
 """
 
 from __future__ import annotations

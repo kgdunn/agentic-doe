@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 logger = logging.getLogger(__name__)
 
 # Weak default values that must NOT be used in production.
-_INSECURE_DEFAULTS = frozenset({"doe_password", "neo4j_password", "change-me", ""})
+_INSECURE_DEFAULTS = frozenset({"doe_password", "change-me", ""})
 
 
 class Settings(BaseSettings):
@@ -71,11 +71,6 @@ class Settings(BaseSettings):
             f"postgresql+psycopg2://{self.postgres_test_user}:{self.postgres_test_password}"
             f"@{self.postgres_test_host}:{self.postgres_test_port}/{self.postgres_test_db}"
         )
-
-    # Neo4j
-    neo4j_uri: str = "bolt://localhost:7687"
-    neo4j_user: str = "neo4j"
-    neo4j_password: str = "neo4j_password"
 
     # Anthropic
     anthropic_api_key: str = ""
@@ -174,11 +169,6 @@ class Settings(BaseSettings):
     exports_chromium_path: str | None = None
     public_share_rate_limit: str = "30/minute"
 
-    # GeoIP
-    # Path to a MaxMind GeoLite2-Country.mmdb file. If unset or missing,
-    # country lookup is silently skipped — login flows continue normally.
-    geoip_country_db_path: str | None = None
-
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
@@ -224,8 +214,6 @@ class Settings(BaseSettings):
             )
         if self.postgres_password in _INSECURE_DEFAULTS:
             problems.append("POSTGRES_PASSWORD uses a weak default value")
-        if self.neo4j_password in _INSECURE_DEFAULTS:
-            problems.append("NEO4J_PASSWORD uses a weak default value")
 
         if problems:
             msg = "Insecure configuration detected in production:\n  - " + "\n  - ".join(problems)

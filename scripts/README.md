@@ -1,7 +1,7 @@
 # Operational scripts
 
 Daily Postgres backup + restore tooling for this repo. Installed on the
-VPS and invoked from cron. Neo4j is **out of scope**.
+VPS and invoked from cron.
 
 ## What's in here
 

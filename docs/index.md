@@ -28,7 +28,7 @@ The statistical analysis engine lives in a separate package: [process-improve](h
 ## Project Structure
 
 ```
-backend/     FastAPI API + PostgreSQL + Neo4j
+backend/     FastAPI API + PostgreSQL
 frontend/    SvelteKit single-page application
 docs/        Project documentation (this site)
 ```
