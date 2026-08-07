@@ -12,7 +12,6 @@ from app.api.v1.endpoints import (
     experiments,
     feedback,
     health,
-    mcp,
     password_reset,
     roles,
     shares_public,
@@ -20,7 +19,6 @@ from app.api.v1.endpoints import (
     tools,
     uploads,
 )
-from app.config import settings
 
 api_v1_router = APIRouter()
 
@@ -81,9 +79,3 @@ api_v1_router.include_router(
     dependencies=_auth,
 )
 api_v1_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"], dependencies=_auth)
-
-# Hosted MCP endpoint: off by default. Mounts only when operators
-# explicitly enable it. Auth + per-identity CPU budget + rate limit
-# are enforced inside the router itself.
-if settings.mcp_enabled:
-    api_v1_router.include_router(mcp.router, prefix=settings.mcp_path_prefix, tags=["mcp"])

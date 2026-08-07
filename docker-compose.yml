@@ -27,11 +27,6 @@ services:
       retries: 10
       start_period: 10s
 
-  # TODO: when MCP_ENABLED goes live in production, break the MCP router
-  # out into its own service (same image, uvicorn with a narrower route
-  # include) and give it a lower cpus/mem_limit so abusive MCP clients
-  # cannot take the chat UI down with them.
-
   # -----------------------------------------------------------------------
   # Blue-green backend pair (zero-downtime deploys).
   #

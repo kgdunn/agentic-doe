@@ -105,14 +105,6 @@ class Settings(BaseSettings):
     # in production so the LLM cannot leak the hidden model uninvited.
     simulator_reveal_force: bool = False
 
-    # MCP server (hosted). Exposes the process_improve tool registry over
-    # HTTP + SSE. Gated by auth + per-identity CPU budget; off by default
-    # until an operator explicitly turns it on.
-    mcp_enabled: bool = False
-    mcp_rate_limit: str = "30/minute"
-    mcp_daily_cpu_seconds: int = 3600
-    mcp_path_prefix: str = "/mcp"
-
     # Browser session cookies.
     # ``factorial_session`` is the httpOnly cookie carrying an opaque
     # session id (looked up directly in the ``sessions`` table). There is
