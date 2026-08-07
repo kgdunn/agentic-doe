@@ -26,12 +26,19 @@ class BYOKCredentialsHistory(Base):
     """One row per lifecycle event for a user's BYOK token.
 
     ``action`` is one of:
-      enrolled  - user pasted a fresh token
-      rotated   - token was replaced (delete-then-create)
-      removed   - user disabled BYOK
-      verified  - manual or automated /byok/test ping returned 200
-      rejected  - Anthropic returned 401 on a chat or test call
-      orphaned  - DEK became unrecoverable (e.g. password reset)
+      enrolled     - user pasted a fresh token
+      rotated_out  - existing credential was closed as part of a rotation
+                     (paired with ``rotated_in`` on the same rotate call)
+      rotated_in   - fresh credential was opened as part of a rotation
+      verified     - manual or automated /byok/test ping returned 200
+      rejected     - Anthropic returned 401 on a chat or test call
+      removed      - user disabled BYOK
+
+    Rotation is modelled as delete-then-create (see the module docstring):
+    the rotate endpoint appends both a ``rotated_out`` row for the old
+    credential and a ``rotated_in`` row for the new one; there is no plain
+    ``rotated`` action. Orphaning is a ``users.byok_token_status`` value
+    (``STATUS_ORPHANED``), not an ``action`` written to this table.
 
     ``status_after`` mirrors ``users.byok_token_status`` after this event
     so an admin can reconstruct the timeline without joining against a
