@@ -143,10 +143,7 @@ _ALLOWED_BACKGROUND_RE = re.compile(r"^[a-z0-9_]{1,50}$")
 def get_anthropic_client(api_key: str | None = None) -> anthropic.Anthropic:
     """Create a synchronous Anthropic client.
 
-    When ``api_key`` is provided (BYOK path), it is used directly and
-    the call to Anthropic is billed against that key — no platform
-    markup. When ``None``, falls back to ``settings.anthropic_api_key``
-    (platform key, with markup).
+    When ``api_key`` is None, falls back to ``settings.anthropic_api_key``.
 
     Raises ``RuntimeError`` when neither path produces a usable key.
     """
@@ -346,7 +343,6 @@ async def _persist_new_messages(
                         output_cost_usd=meta.get("output_cost_usd"),
                         markup_rate=meta.get("markup_rate"),
                         markup_cost_usd=meta.get("markup_cost_usd"),
-                        byok_used=bool(meta.get("byok_used", False)),
                     )
                     db.add(msg_row)
                     tool_use_id_to_msg_id[block.get("id", "")] = msg_row.id
@@ -368,7 +364,6 @@ async def _persist_new_messages(
                         output_cost_usd=meta.get("output_cost_usd"),
                         markup_rate=meta.get("markup_rate"),
                         markup_cost_usd=meta.get("markup_cost_usd"),
-                        byok_used=bool(meta.get("byok_used", False)),
                     )
                     db.add(msg_row)
                     seq += 1
@@ -499,7 +494,6 @@ async def run_chat(
     user_id: uuid.UUID,
     user_background: str | None = None,
     detail_level: str = "intermediate",
-    byok_token: str | None = None,
 ) -> AsyncGenerator[ServerSentEvent, None]:
     """Orchestrate a chat turn: load history, run agent loop, persist, stream SSE.
 
@@ -658,9 +652,8 @@ async def run_chat(
             event_queue: queue.Queue[_QueueItem] = queue.Queue()
             tool_specs = [{k: v for k, v in s.items() if k != "category"} for s in get_tool_specs()]
 
-            byok_used = byok_token is not None
             try:
-                client = get_anthropic_client(byok_token)
+                client = get_anthropic_client()
             except RuntimeError as exc:
                 yield await emit("error", {"message": str(exc)})
                 return
@@ -681,7 +674,6 @@ async def run_chat(
                 newly_created_sims,
                 settings.simulator_reveal_force,
                 timer,
-                byok_used,
             )
 
             # 6. Stream SSE events from the queue. Token deltas are

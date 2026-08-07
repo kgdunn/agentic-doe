@@ -147,11 +147,6 @@ class Message(Base):
     markup_cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 10), nullable=True)
 
     # ``true`` if this turn was billed against a user-supplied Anthropic
-    # token (BYOK) instead of the platform key. We do not charge markup
-    # on BYOK rows; ``markup_cost_usd`` is zero for them. Used for
-    # support, abuse triage, and analytics — never user-displayed
-    # cost-per-message values rely on this flag alone.
-    byok_used: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     # Timestamps
     created_at: Mapped[str] = mapped_column(
