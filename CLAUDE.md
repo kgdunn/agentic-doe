@@ -4,9 +4,9 @@
 
 **Factorial** is a monorepo containing the backend API (FastAPI) and frontend (SvelteKit) for a conversational, LLM-assisted web application that helps users design, run, and analyze scientific experiments using Design of Experiments (DOE) methodology.
 
-The actual statistical analysis tools live in a **separate package**: [`process-improve`](https://github.com/kgdunn/process-improve). That package provides PCA, PLS, factorial designs, response surface methodology, control charts, and more. The backend calls those tools via LangGraph agent orchestration (not yet implemented).
+The actual statistical analysis tools live in a **separate package**: [`process-improve`](https://github.com/kgdunn/process-improve). That package provides PCA, PLS, factorial designs, response surface methodology, control charts, and more. The backend calls those tools through the agent loop in `services/agent_loop.py`.
 
-For full system architecture (agent tools, knowledge graph schema, deployment), see `docs/architecture/` (split across `overview.md`, `monorepo.md`, `tech-stack.md`, `agent-tools.md`, `knowledge-graph.md`).
+For full system architecture (agent tools, DOE knowledge base, deployment), see `docs/architecture/` (split across `overview.md`, `monorepo.md`, `tech-stack.md`, `agent-tools.md`, `knowledge-graph.md`).
 For frontend UI/UX spec (pages, components, streaming protocol), see `docs/frontend/specification.md`.
 For VPS deployment guide, see `docs/deployment/vps-guide.md`.
 Documentation is built with MkDocs and deployed to GitHub Pages.
