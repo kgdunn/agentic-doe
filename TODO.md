@@ -194,7 +194,13 @@ Still to remove, in rough order of value:
       its hourly LLM-performance snapshot loop in `main.py`.
 - [ ] `anthropic_status` (244 LOC) feeds the public `/health/llm` banner.
       Keep or drop is a product call, not scaffolding: decide with the user.
-- [ ] `simulator_interception`, `turn_timing`.
+- [ ] ~~`simulator_interception`, `turn_timing`~~ - **retired 2026-08-07,
+      do not remove these.** Listed here in haste; both turn out to be
+      load-bearing. `simulator_interception` provides the `pre_dispatch` /
+      `post_dispatch` hooks the agent loop uses to drive the fake-data
+      simulator, which is a real teaching feature, not scaffolding.
+      `turn_timing` writes `logs/timing.jsonl`, which the "Chat agent latency"
+      items below explicitly depend on having a few weeks of data from.
 
 **Do not remove `roles`.** It looks like RBAC and is not: `is_admin` is the
 RBAC flag, while the `roles` table holds the user's *professional profile*
