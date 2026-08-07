@@ -84,7 +84,7 @@ class TestCalculateCost:
 
     def test_platform_key_billable_equals_markup(self):
         # On the platform path, billable_to_user_usd is just an alias for
-        # markup_cost_usd — they must agree byte-for-byte so balance
-        # ledger reads / writes never disagree on rounding.
+        # markup_cost_usd - they must agree byte-for-byte so the two
+        # never disagree on rounding.
         snap = pricing.calculate_cost("claude-sonnet-4", 100, 50)
         assert snap["billable_to_user_usd"] == snap["markup_cost_usd"]

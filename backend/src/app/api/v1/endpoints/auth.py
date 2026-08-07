@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth_cookies import clear_session_cookies, set_session_cookies
 from app.api.csrf import require_csrf
-from app.api.deps import SERVICE_USER_ID, AuthUser, require_auth
+from app.api.deps import AuthUser, require_auth
 from app.api.rate_limit import limiter
 from app.config import settings
 from app.db.session import get_db_session
@@ -21,7 +21,7 @@ from app.schemas.auth import (
     SessionResponse,
     UserResponse,
 )
-from app.services import balance_service, session_service
+from app.services import session_service
 from app.services.auth_service import authenticate_user, record_login_activity
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,6 @@ async def login(
         csrf_token=new_session.csrf_token,
     )
 
-    balance = await balance_service.get_balance(db, user.id)
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -98,8 +97,6 @@ async def login(
         background=user.role.name if user.role_id and user.role else None,
         is_admin=user.is_admin,
         created_at=None,
-        balance_usd=balance.balance_usd if balance else None,
-        balance_tokens=balance.balance_tokens if balance else None,
     )
 
 
@@ -152,14 +149,6 @@ async def get_me(
     db: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
     """Get the current authenticated user's profile."""
-    balance_usd = None
-    balance_tokens = None
-    if current_user.id != SERVICE_USER_ID:
-        balance = await balance_service.get_balance(db, current_user.id)
-        if balance is not None:
-            balance_usd = balance.balance_usd
-            balance_tokens = balance.balance_tokens
-
     return UserResponse(
         id=current_user.id,
         email=current_user.email,
@@ -167,8 +156,6 @@ async def get_me(
         background=current_user.background,
         created_at=None,
         is_admin=current_user.is_admin,
-        balance_usd=balance_usd,
-        balance_tokens=balance_tokens,
     )
 
 

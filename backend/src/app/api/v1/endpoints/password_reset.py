@@ -27,7 +27,7 @@ from app.schemas.auth import (
     PasswordResetValidateResponse,
     UserResponse,
 )
-from app.services import balance_service, session_service, setup_token_service
+from app.services import session_service, setup_token_service
 from app.services.auth_service import hash_password, verify_password
 from app.services.email_service import send_setup_email
 
@@ -96,7 +96,6 @@ async def complete_setup(
         csrf_token=new_session.csrf_token,
     )
 
-    balance = await balance_service.get_balance(db, user.id)
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -104,8 +103,6 @@ async def complete_setup(
         background=user.role.name if user.role_id and user.role else None,
         is_admin=user.is_admin,
         created_at=None,
-        balance_usd=balance.balance_usd if balance else None,
-        balance_tokens=balance.balance_tokens if balance else None,
     )
 
 

@@ -15,7 +15,6 @@ from app.models.conversation import Conversation
 from app.models.experiment import Experiment
 from app.models.signup_request import SignupRequest
 from app.models.user import User
-from app.models.user_balance import UserBalance
 from app.models.user_feedback import UserFeedback
 
 
@@ -31,8 +30,6 @@ class UserAggregates:
     feedback_count: int = 0
     open_experiments: int = 0
     avg_runs_per_experiment: float | None = None
-    balance_usd: Decimal | None = None
-    balance_tokens: int | None = None
     signup_status: str | None = None
     disclaimers_accepted: bool | None = None
 
@@ -195,16 +192,6 @@ async def _aggregate_for_users(
         a.open_experiments = open_counts[uid]
         runs = run_totals[uid]
         a.avg_runs_per_experiment = (sum(runs) / len(runs)) if runs else None
-
-    bal_rows = await db.execute(
-        select(UserBalance.user_id, UserBalance.balance_usd, UserBalance.balance_tokens).where(
-            UserBalance.user_id.in_(ids)
-        )
-    )
-    for uid, usd, tokens in bal_rows:
-        a = agg[uid]
-        a.balance_usd = Decimal(usd) if usd is not None else None
-        a.balance_tokens = int(tokens) if tokens is not None else None
 
     # Signup request join is by lower(email); one signup per email in practice.
     sig_rows = await db.execute(

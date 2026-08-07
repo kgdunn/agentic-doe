@@ -76,14 +76,6 @@
             Admin
           </a>
         {/if}
-        {#if authState.user?.balance_usd != null}
-          <span
-            class="hidden font-mono text-xs text-ink-faint sm:inline"
-            title={`${authState.user.balance_tokens ?? 0} tokens`}
-          >
-            ${Number(authState.user.balance_usd).toFixed(2)}
-          </span>
-        {/if}
         <a
           href="/profile"
           class="hidden font-mono text-xs text-ink-faint underline-offset-2 hover:text-ink hover:underline sm:inline"

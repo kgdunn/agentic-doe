@@ -26,7 +26,7 @@ from app.schemas.signup import (
     SignupSubmitRequest,
     SignupSubmitResponse,
 )
-from app.services import balance_service, session_service
+from app.services import session_service
 from app.services.admin_service import list_admin_emails
 from app.services.email_service import send_admin_notification, send_invite_email, send_signup_confirmation
 from app.services.signup_service import (
@@ -124,7 +124,6 @@ async def register_with_invite(
         csrf_token=new_session.csrf_token,
     )
 
-    balance = await balance_service.get_balance(db, user.id)
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -132,8 +131,6 @@ async def register_with_invite(
         background=user.role.name if user.role_id and user.role else None,
         is_admin=user.is_admin,
         created_at=None,
-        balance_usd=balance.balance_usd if balance else None,
-        balance_tokens=balance.balance_tokens if balance else None,
     )
 
 

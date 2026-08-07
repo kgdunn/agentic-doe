@@ -82,16 +82,6 @@
           <dt class="text-ink-faint">Display name</dt>
           <dd class="sm:col-span-2 text-ink">{authState.user.display_name}</dd>
         {/if}
-
-        {#if authState.user.balance_usd != null}
-          <dt class="text-ink-faint">Balance</dt>
-          <dd class="sm:col-span-2 font-mono text-ink">
-            ${Number(authState.user.balance_usd).toFixed(2)}
-            <span class="text-ink-faint">
-              ({authState.user.balance_tokens ?? 0} tokens)
-            </span>
-          </dd>
-        {/if}
       </dl>
     </section>
   {/if}

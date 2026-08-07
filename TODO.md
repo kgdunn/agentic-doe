@@ -180,10 +180,11 @@ Landed:
 
 Still to remove, in rough order of value:
 
-- [ ] Balance / metering: `balance_service`, `pricing`, `user_balance`.
-      Per-user cost accounting for zero users. Note `pricing.calculate_cost`
-      is still called from `agent_loop` to stamp per-message cost columns, so
-      decide first whether those columns stay (useful telemetry) or go.
+- [x] Balance / metering: `balance_service`, `user_balance`, the admin
+      top-up endpoint and UI, and the balance fields on `/auth/me`.
+      Migration `0014`. `pricing` and the per-message cost columns are
+      deliberately **kept**: they are telemetry, not billing, and they answer
+      "what is the agent spending per turn" whether or not anyone is charged.
 - [ ] Invite-based signup: `signup_service`, `setup_token_service`,
       `signup_requests`, `setup_tokens`, the admin approve/reject endpoints
       and the `/register` flow. Replace with a waitlist row plus

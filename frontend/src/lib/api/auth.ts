@@ -16,8 +16,6 @@ export interface UserProfile {
   background: string | null;
   is_admin: boolean;
   created_at: string | null;
-  balance_usd: string | null;
-  balance_tokens: number | null;
 }
 
 function browserTimezone(): string | undefined {
