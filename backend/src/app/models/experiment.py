@@ -1,9 +1,17 @@
 """SQLAlchemy model for experiment persistence.
 
-An Experiment is auto-created when the agent's ``generate_design`` tool
-succeeds.  It stores the full design output (JSONB), factor specs, and
-user-entered results so experiments survive browser sessions and support
-incremental results entry.
+An Experiment is created along two paths:
+
+- Auto-created by ``experiment_service._create_experiment_from_design``
+  when the agent's ``generate_design`` tool succeeds inside a chat
+  turn.
+- Persisted directly by the initial-draft path in
+  ``api/v1/endpoints/uploads.py`` (``_persist_initial_draft``) when a
+  user uploads an existing design spreadsheet.
+
+Either way it stores the full design output (JSONB), factor specs,
+and user-entered results so experiments survive browser sessions and
+support incremental results entry.
 """
 
 from __future__ import annotations
@@ -45,7 +53,14 @@ class Experiment(Base):
     )
     design_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    # Factor specifications (e.g. [{name, type, low, high, units}, ...])
+    # Factor specifications, stored as a JSON array of per-factor dicts,
+    # e.g. ``[{"name": "temperature", "type": "continuous", "low": 20,
+    # "high": 60, "units": "C"}, ...]``. Both write paths
+    # (``experiment_service._create_experiment_from_design`` and
+    # ``uploads._persist_initial_draft``) assign a Python ``list``
+    # here; the ``dict`` annotation predates the shape decision and
+    # is a known mismatch, kept as-is to avoid a schema-touching
+    # change on a docstring-only pass.
     factors: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Full generate_design tool output (design_coded, design_actual, run_order, etc.)
