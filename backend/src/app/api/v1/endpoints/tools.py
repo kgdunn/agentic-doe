@@ -29,7 +29,13 @@ async def list_tools(
 async def execute_tool(request: ToolExecuteRequest) -> dict[str, Any]:
     """Execute a process-improve tool by name.
 
-    The tool runs in a background thread with a 300-second timeout
-    (same path as the agent chat loop).
+    Same path as the agent chat loop: the call runs off the event loop
+    via ``asyncio.to_thread`` and, when ``settings.tool_safe_mode`` is
+    on (the default), is dispatched into a forked subprocess by
+    ``process_improve.tool_safety.safe_execute_tool_call`` with a
+    wall-clock cap of ``settings.tool_timeout_seconds`` (default 300 s)
+    and a memory cap of ``settings.tool_memory_mb``. When safe mode is
+    off, the same thread hop runs an in-process call without those
+    per-call limits.
     """
     return await call_tool(request.tool_name, request.tool_input)

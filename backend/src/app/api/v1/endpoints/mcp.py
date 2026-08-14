@@ -7,7 +7,9 @@ This is a REST shim, not full MCP streamable-HTTP protocol. Fully
 compliant MCP transport can be layered on top later; for now we focus
 on the security envelope:
 
-- Auth: requires JWT or the shared ``X-API-Key`` (via ``require_auth``).
+- Auth: requires the opaque session cookie or the shared ``X-API-Key``
+  (via ``require_auth``, which tries the cookie first and falls back to
+  the API key).
 - Rate: slowapi IP-based limit (``settings.mcp_rate_limit``).
 - Budget: per-identity daily CPU-second quota (``tool_usage`` table).
 - Isolation: tool execution runs off the event loop in a forked

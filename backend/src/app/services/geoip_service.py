@@ -38,8 +38,8 @@ def _reader():  # type: ignore[no-untyped-def]
 def lookup_country(ip: str | None) -> str | None:
     """Return ISO-3166 α-2 country code for ``ip``, or ``None`` if unknown.
 
-    Non-routable addresses (loopback, private, link-local) return ``None``
-    without hitting the database.
+    Non-routable addresses (loopback, private, link-local, multicast)
+    return ``None`` without hitting the database.
     """
     if not ip:
         return None

@@ -147,9 +147,11 @@ def orphan_dek(user: User) -> bool:
     later forensic check can confirm what the row contained, but no
     code path will try to decrypt them again.
 
-    Returns True if the user actually had an active enrollment that was
-    just orphaned, False otherwise. Idempotent — calling on an already-
-    orphaned or absent row is a no-op.
+    Returns True if the user had an active or rejected enrollment that
+    was just orphaned, False otherwise (rejected rows are eligible
+    because their wraps still exist and can still be marked
+    unrecoverable). Idempotent — calling on an already-orphaned or
+    absent row is a no-op.
     """
     if getattr(user, "byok_token_status", STATUS_ABSENT) not in (STATUS_ACTIVE, STATUS_REJECTED):
         return False
@@ -187,7 +189,14 @@ def enroll(user: User, password: str, anthropic_api_key: str) -> None:
 def disable(user: User) -> bool:
     """Wipe the user-side BYOK ciphertexts and revert status to ``absent``.
 
-    Idempotent: returns ``False`` if there was nothing to wipe.
+    Idempotent. The return value reflects whether any encryption
+    material was present on the row before the call — the four
+    ciphertext columns plus a non-``absent`` status — and is
+    ``False`` when they were already all clear. Note that
+    ``byok_token_last_verified_at`` is cleared unconditionally and is
+    *not* considered part of that presence check; a row with only a
+    lingering timestamp still returns ``False``.
+
     Per-session DEK wraps in the ``sessions`` table are not touched
     here — they will fail to decrypt against the wiped user row at
     the next chat request and the chat path will fall back to the
