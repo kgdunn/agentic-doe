@@ -59,7 +59,11 @@ def parse_upload(
     them without touching the global settings object.
 
     Raises :class:`UploadValidationError` for any user-actionable
-    failure (oversized, unsupported extension, malformed, non-rectangular).
+    failure (oversized byte count, legacy ``.xls`` / unsupported
+    extension, malformed / undecodable content, empty sheet, or a
+    cell-count above ``max_cells``). Ragged rows are *not* an error:
+    :func:`_normalise` right-pads short rows to the widest row before
+    the cell-count check runs.
     """
 
     if max_bytes is None or max_cells is None:
