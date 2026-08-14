@@ -77,8 +77,28 @@ async def chat(
     """Start or continue a conversation with the DOE agent.
 
     Accepts a user message and optional ``conversation_id``.
-    Returns an SSE stream with events: ``conversation_id``, ``token``,
-    ``tool_start``, ``tool_result``, ``done``, and ``error``.
+    Returns an SSE stream. The event set the agent loop and the
+    ``run_chat`` orchestrator may emit is:
+
+    - ``conversation_id`` — first frame, carries the conversation and
+      turn identifiers so the client can construct a resume URL.
+    - ``phase`` — coarse-grained lifecycle marker (``thinking`` /
+      ``streaming`` / ``calling_tool`` / ``finalizing``).
+    - ``token`` — an incremental text delta from the model.
+    - ``plan`` / ``plan_update`` — meta-tool events for the inline plan
+      UI (emitted instead of ``tool_start`` / ``tool_result`` for the
+      ``record_plan`` / ``update_plan`` local tools).
+    - ``tool_start`` / ``tool_result`` — one pair per non-local tool
+      invocation.
+    - ``experiment_created`` / ``simulator_created`` — one event per
+      row auto-persisted after a successful ``generate_design`` or
+      simulator-creating tool call.
+    - ``done`` — turn completed normally.
+    - ``error`` — terminal failure.
+
+    The ``interrupted`` event is not emitted by this endpoint; the
+    resume endpoint synthesises it when a replay ends without a
+    terminal event.
     """
     byok_token = await _resolve_byok_token(current_user)
     return EventSourceResponse(
