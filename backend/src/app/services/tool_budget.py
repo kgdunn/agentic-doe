@@ -74,9 +74,11 @@ async def record_call(
 ) -> None:
     """Atomically upsert today's usage row for *user_id*.
 
-    ``duration_seconds`` is rounded up to the next integer so very short
-    calls still count against the budget (prevents amplification by
-    high-volume sub-second calls).
+    ``duration_seconds`` is coerced into an integer number of seconds
+    via ``max(1, int(duration_seconds + 0.999))`` — a ``+0.999``
+    truncation that rounds fractional durations up, with a floor of
+    one second so very short calls still count against the budget
+    (prevents amplification by high-volume sub-second calls).
     """
     increment = max(1, int(duration_seconds + 0.999))
     stmt = (
