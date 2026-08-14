@@ -100,10 +100,18 @@ class Message(Base):
     """A single message (or content block) within a conversation.
 
     Stores user text, assistant text, tool_use blocks, and tool_result
-    entries.  The ``sequence`` column determines ordering.  Tool-related
-    fields (``tool_use_id``, ``tool_name``, ``tool_input``) are populated
-    for assistant tool_use blocks and their corresponding tool_result
-    entries.
+    entries.  The ``sequence`` column determines ordering.
+
+    Tool-related columns populate as follows (see
+    ``agent_service._persist_new_messages``):
+
+    - Assistant ``tool_use`` blocks set ``tool_use_id``, ``tool_name``,
+      and ``tool_input`` (with ``is_tool_result=False``).
+    - ``tool_result`` rows set only ``tool_use_id`` (with
+      ``is_tool_result=True``); ``tool_name`` and ``tool_input`` stay
+      ``None`` because the tool identity and arguments live on the
+      matching ``tool_use`` row and on the corresponding
+      :class:`ToolCall` audit record.
     """
 
     __tablename__ = "messages"
@@ -244,13 +252,30 @@ class ToolCall(Base):
 class ChatEvent(Base):
     """Append-only log of SSE events emitted during an agent turn.
 
-    Every event the chat stream yields (``conversation_id``, ``token``,
-    ``tool_start``, ``tool_result``, ``experiment_created``, ``done``,
-    ``error``) is persisted here so that a client which drops its SSE
-    connection can reconnect with ``Last-Event-ID`` and replay anything
-    it missed. Rows are scoped by ``turn_id`` — one UUID per
-    ``run_chat`` invocation — and ordered by the monotonic per-turn
-    ``sequence`` column.
+    Every event the chat stream yields is persisted here so that a
+    client which drops its SSE connection can reconnect with
+    ``Last-Event-ID`` and replay anything it missed. The full set of
+    persisted ``event_type`` values (see ``_persist_chat_event`` in
+    ``agent_service``) is:
+
+    - ``conversation_id`` — first frame with conversation / turn IDs.
+    - ``phase`` — lifecycle marker (``thinking`` / ``streaming`` /
+      ``calling_tool`` / ``finalizing``).
+    - ``token`` — model text delta (persisted as a coalesced batch:
+      live SSE still sees one row per delta, but multiple deltas may
+      be flushed into a single ``chat_events`` row).
+    - ``plan`` / ``plan_update`` — inline plan UI events.
+    - ``tool_start`` / ``tool_result`` — non-local tool invocations.
+    - ``experiment_created`` / ``simulator_created`` — auto-persisted
+      side-effect rows for the client.
+    - ``done`` — terminal, turn completed normally.
+    - ``error`` — terminal, turn failed.
+
+    Rows are scoped by ``turn_id`` — one UUID per ``run_chat``
+    invocation — and ordered by the monotonic per-turn ``sequence``
+    column. The synthetic ``interrupted`` event emitted by the resume
+    endpoint when a turn ends without a terminal event is *not*
+    persisted; it is a runtime marker only.
     """
 
     __tablename__ = "chat_events"
