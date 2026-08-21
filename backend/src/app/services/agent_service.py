@@ -511,6 +511,14 @@ async def run_chat(
     before being yielded, so a disconnected client can replay missed
     events via the resume endpoint using the standard SSE
     ``Last-Event-ID`` header.
+
+    Parameters
+    ----------
+    byok_token:
+        User-supplied Anthropic API key (BYOK); when present the
+        Anthropic call is billed against the user's key and platform
+        markup is skipped. Falls back to the platform key when
+        ``None``.
     """
     system_prompt = _build_system_prompt(user_background, detail_level)
 
