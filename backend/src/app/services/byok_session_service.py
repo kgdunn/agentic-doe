@@ -147,9 +147,9 @@ def orphan_dek(user: User) -> bool:
     later forensic check can confirm what the row contained, but no
     code path will try to decrypt them again.
 
-    Returns True if the user actually had an active enrollment that was
-    just orphaned, False otherwise. Idempotent — calling on an already-
-    orphaned or absent row is a no-op.
+    Returns True if the user had an active or rejected enrollment that
+    was just orphaned, False otherwise (already-orphaned or absent rows
+    are no-ops).
     """
     if getattr(user, "byok_token_status", STATUS_ABSENT) not in (STATUS_ACTIVE, STATUS_REJECTED):
         return False

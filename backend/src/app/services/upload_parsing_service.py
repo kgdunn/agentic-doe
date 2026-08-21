@@ -59,7 +59,9 @@ def parse_upload(
     them without touching the global settings object.
 
     Raises :class:`UploadValidationError` for any user-actionable
-    failure (oversized, unsupported extension, malformed, non-rectangular).
+    failure (oversized, unsupported extension, malformed). Rows are
+    right-padded to the widest row by ``_normalise`` before validation,
+    so a non-rectangular input is not itself an error.
     """
 
     if max_bytes is None or max_cells is None:

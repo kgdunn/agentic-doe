@@ -164,7 +164,9 @@ class AnthropicStatusTracker:
 
 
 def _percentile(sorted_values: list[int], pct: int) -> int:
-    """Nearest-rank percentile on a pre-sorted list of ints."""
+    """Rank-based percentile using ``k = pct*n // 100`` (returns the
+    value at the floor rank, not the strict nearest-rank definition).
+    """
     if not sorted_values:
         raise ValueError("empty list")
     k = max(0, min(len(sorted_values) - 1, (pct * len(sorted_values)) // 100))
