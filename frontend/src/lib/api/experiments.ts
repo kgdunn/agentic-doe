@@ -101,7 +101,6 @@ export async function fetchConversationMessages(
   conversation_id: string;
   title: string;
   messages: ChatMessage[];
-  byok_used: boolean;
 }> {
   const resp = await authFetch(`/api/v1/chat/${conversationId}/messages`);
   if (!resp.ok) throw new Error(`Failed to fetch messages: ${resp.status}`);

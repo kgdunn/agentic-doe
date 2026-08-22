@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 logger = logging.getLogger(__name__)
 
 # Weak default values that must NOT be used in production.
-_INSECURE_DEFAULTS = frozenset({"doe_password", "neo4j_password", "change-me", ""})
+_INSECURE_DEFAULTS = frozenset({"doe_password", "change-me", ""})
 
 
 class Settings(BaseSettings):
@@ -72,11 +72,6 @@ class Settings(BaseSettings):
             f"@{self.postgres_test_host}:{self.postgres_test_port}/{self.postgres_test_db}"
         )
 
-    # Neo4j
-    neo4j_uri: str = "bolt://localhost:7687"
-    neo4j_user: str = "neo4j"
-    neo4j_password: str = "neo4j_password"
-
     # Anthropic
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"
@@ -87,22 +82,6 @@ class Settings(BaseSettings):
     auth_rate_limit: str = "5/minute"
     register_rate_limit: str = "3/hour"
     feedback_rate_limit: str = "20/hour"
-
-    # BYOK (Bring-Your-Own Anthropic API key).
-    # ``byok_master_key`` is a base64-encoded 32-byte key used to encrypt
-    # the per-session DEK wraps stored in the ``sessions`` table. It must
-    # be set as soon as any user enrols a personal token; without it,
-    # active BYOK sessions cannot be decrypted after a server restart.
-    # The Argon2id parameters control the cost of password->KEK derivation
-    # at login. Defaults follow the OWASP "Argon2id recommended" profile
-    # adjusted for memory (64 MiB) so derivation stays under ~250 ms on a
-    # modern x86 server. Any change requires a re-enrolment for existing
-    # users — the active params are stored on the user row alongside the
-    # salt so old values keep working.
-    byok_master_key: str = ""
-    byok_argon2_memory_kib: int = 65536
-    byok_argon2_iterations: int = 3
-    byok_argon2_parallelism: int = 1
 
     # Tool execution
     # ``tool_safe_mode`` routes process_improve calls through
@@ -125,14 +104,6 @@ class Settings(BaseSettings):
     # gate. Intended only for debugging or internal tooling; keep false
     # in production so the LLM cannot leak the hidden model uninvited.
     simulator_reveal_force: bool = False
-
-    # MCP server (hosted). Exposes the process_improve tool registry over
-    # HTTP + SSE. Gated by auth + per-identity CPU budget; off by default
-    # until an operator explicitly turns it on.
-    mcp_enabled: bool = False
-    mcp_rate_limit: str = "30/minute"
-    mcp_daily_cpu_seconds: int = 3600
-    mcp_path_prefix: str = "/mcp"
 
     # Browser session cookies.
     # ``factorial_session`` is the httpOnly cookie carrying an opaque
@@ -173,11 +144,6 @@ class Settings(BaseSettings):
     exports_enable_pdf: bool = True
     exports_chromium_path: str | None = None
     public_share_rate_limit: str = "30/minute"
-
-    # GeoIP
-    # Path to a MaxMind GeoLite2-Country.mmdb file. If unset or missing,
-    # country lookup is silently skipped — login flows continue normally.
-    geoip_country_db_path: str | None = None
 
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
@@ -224,8 +190,6 @@ class Settings(BaseSettings):
             )
         if self.postgres_password in _INSECURE_DEFAULTS:
             problems.append("POSTGRES_PASSWORD uses a weak default value")
-        if self.neo4j_password in _INSECURE_DEFAULTS:
-            problems.append("NEO4J_PASSWORD uses a weak default value")
 
         if problems:
             msg = "Insecure configuration detected in production:\n  - " + "\n  - ".join(problems)

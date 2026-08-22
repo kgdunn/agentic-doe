@@ -9,7 +9,6 @@
 | ORM | SQLAlchemy 2.0 async | PostgreSQL access |
 | Migrations | Alembic | Schema versioning |
 | Relational DB | PostgreSQL 16 | Experiments, users, results |
-| Knowledge Graph | Neo4j 5 Community | Entity relationships, domain ontology |
 | Agent LLM | Anthropic API (Claude) | Conversational agent |
 | Agent Orchestration | LangGraph (planned) | Multi-step workflows |
 | Observability | LangSmith or Langfuse (planned) | Agent tracing |

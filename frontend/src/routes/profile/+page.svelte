@@ -7,7 +7,6 @@
     revokeSession,
     type SessionSummary,
   } from '$lib/api/sessions';
-  import BYOKSection from '$lib/components/BYOKSection.svelte';
 
   let sessions = $state<SessionSummary[]>([]);
   let loading = $state(true);
@@ -83,22 +82,8 @@
           <dt class="text-ink-faint">Display name</dt>
           <dd class="sm:col-span-2 text-ink">{authState.user.display_name}</dd>
         {/if}
-
-        {#if authState.user.balance_usd != null}
-          <dt class="text-ink-faint">Balance</dt>
-          <dd class="sm:col-span-2 font-mono text-ink">
-            ${Number(authState.user.balance_usd).toFixed(2)}
-            <span class="text-ink-faint">
-              ({authState.user.balance_tokens ?? 0} tokens)
-            </span>
-          </dd>
-        {/if}
       </dl>
     </section>
-  {/if}
-
-  {#if authState.user}
-    <BYOKSection />
   {/if}
 
   <section class="mb-6 rounded-lg border border-rule bg-paper-2 p-5">

@@ -20,7 +20,6 @@ is the assertion that would have caught it.
 
 from __future__ import annotations
 
-import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -36,7 +35,6 @@ from app.main import app
 from app.models.role import Role
 from app.models.signup_request import SignupRequest
 from app.models.user import User
-from app.models.user_balance import UserBalance
 from app.services import role_service
 from app.services.auth_service import hash_password
 
@@ -407,9 +405,7 @@ class TestCompleteRegistration:
         assert resp.status_code == 400
 
     @pytest.mark.asyncio
-    async def test_register_marks_signup_as_registered_and_creates_balance(
-        self, db_client: AsyncClient, db_session: AsyncSession
-    ) -> None:
+    async def test_register_marks_signup_as_registered(self, db_client: AsyncClient, db_session: AsyncSession) -> None:
         await db_client.post("/api/v1/signup/request", json=_signup_payload())
         signup = await _fetch_signup_by_email(db_session, "applicant@example.com")
         role = await _chemical_engineer_role(db_session)
@@ -426,13 +422,9 @@ class TestCompleteRegistration:
             json={"token": token, "password": "securepass123", "display_name": "Alice"},
         )
         assert resp.status_code == 201
-        user_id = uuid.UUID(resp.json()["id"])
 
         await db_session.refresh(signup)
         assert signup.status == "registered"
-
-        balance_row = (await db_session.execute(select(UserBalance).where(UserBalance.user_id == user_id))).scalar_one()
-        assert balance_row.user_id == user_id
 
     @pytest.mark.asyncio
     async def test_validate_invite_endpoint_does_not_consume_token(

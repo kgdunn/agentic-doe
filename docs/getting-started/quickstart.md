@@ -32,7 +32,7 @@ make frontend-dev
 ## Full Stack (Docker)
 
 ```bash
-# Start all services (backend + frontend + PostgreSQL + Neo4j)
+# Start all services (backend + frontend + PostgreSQL)
 make deploy
 
 # Run database migrations

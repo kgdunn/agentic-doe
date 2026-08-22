@@ -20,9 +20,6 @@ export interface AdminUser {
   country: string | null;
   timezone: string | null;
 
-  // Balance (null when no user_balances row exists yet).
-  balance_usd: string | null;
-  balance_tokens: number | null;
 
   // Lifetime LLM spend + activity rollups.
   total_cost_usd: string;
@@ -59,16 +56,7 @@ export interface ResetPasswordResponse {
   url: string;
 }
 
-export interface BalanceTopUp {
-  usd?: string;
-  tokens?: number;
-}
 
-export interface AdminBalanceResponse {
-  user_id: string;
-  balance_usd: string;
-  balance_tokens: number;
-}
 
 export async function getAdminUsers(opts: {
   page?: number;
@@ -114,20 +102,5 @@ export async function postResetUserPassword(id: string): Promise<ResetPasswordRe
   return resp.json();
 }
 
-export async function postTopUpBalance(
-  id: string,
-  body: BalanceTopUp,
-): Promise<AdminBalanceResponse> {
-  const resp = await authFetch(`/api/v1/admin/users/${id}/balance/topup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ usd: body.usd ?? '0', tokens: body.tokens ?? 0 }),
-  });
-  if (!resp.ok) {
-    const data = await resp.json().catch(() => ({}));
-    throw new Error(data.detail || `Failed to top up balance: ${resp.status}`);
-  }
-  return resp.json();
-}
 
 export type { Role };

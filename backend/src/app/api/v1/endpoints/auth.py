@@ -11,45 +11,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth_cookies import clear_session_cookies, set_session_cookies
 from app.api.csrf import require_csrf
-from app.api.deps import SERVICE_USER_ID, AuthUser, require_auth
+from app.api.deps import AuthUser, require_auth
 from app.api.rate_limit import limiter
 from app.config import settings
 from app.db.session import get_db_session
-from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
     RegisterRequest,
     SessionResponse,
     UserResponse,
 )
-from app.services import balance_service, byok_session_service, session_service
+from app.services import session_service
 from app.services.auth_service import authenticate_user, record_login_activity
-from app.services.byok_service import BYOKConfigurationError, BYOKDecryptionError
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-async def _byok_wraps_for_login(user: User, password: str) -> tuple[bytes | None, bytes | None]:
-    """Compute per-session BYOK wraps, swallowing operational failures.
-
-    Login should succeed even if BYOK is misconfigured or the user's
-    stored ciphertext is corrupt — the caller will just write NULL
-    onto the new session row and the chat path will fall back to the
-    platform key. We mark the row 'orphaned' on a real decryption
-    failure so the user is told to re-enrol; a missing master key is a
-    server-side problem and is logged loudly without touching the row.
-    """
-    try:
-        return byok_session_service.unwrap_for_login(user, password)
-    except BYOKConfigurationError:
-        logger.exception("BYOK unwrap_for_login failed: master key misconfigured (user=%s)", user.id)
-        return None, None
-    except BYOKDecryptionError:
-        logger.exception("BYOK unwrap_for_login failed: DEK unreadable, marking orphaned (user=%s)", user.id)
-        byok_session_service.orphan_dek(user)
-        return None, None
 
 
 def _client_ip(request: Request) -> str | None:
@@ -101,14 +78,11 @@ async def login(
 
     ip = _client_ip(request)
     await record_login_activity(db, user, ip=ip, timezone=body.timezone)
-    byok_session_key_encrypted, byok_dek_session_wrapped = await _byok_wraps_for_login(user, body.password)
     new_session = await session_service.create_session(
         db,
         user_id=user.id,
         user_agent=_user_agent(request),
         ip=ip,
-        byok_session_key_encrypted=byok_session_key_encrypted,
-        byok_dek_session_wrapped=byok_dek_session_wrapped,
     )
     set_session_cookies(
         response,
@@ -116,7 +90,6 @@ async def login(
         csrf_token=new_session.csrf_token,
     )
 
-    balance = await balance_service.get_balance(db, user.id)
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -124,8 +97,6 @@ async def login(
         background=user.role.name if user.role_id and user.role else None,
         is_admin=user.is_admin,
         created_at=None,
-        balance_usd=balance.balance_usd if balance else None,
-        balance_tokens=balance.balance_tokens if balance else None,
     )
 
 
@@ -178,14 +149,6 @@ async def get_me(
     db: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
     """Get the current authenticated user's profile."""
-    balance_usd = None
-    balance_tokens = None
-    if current_user.id != SERVICE_USER_ID:
-        balance = await balance_service.get_balance(db, current_user.id)
-        if balance is not None:
-            balance_usd = balance.balance_usd
-            balance_tokens = balance.balance_tokens
-
     return UserResponse(
         id=current_user.id,
         email=current_user.email,
@@ -193,8 +156,6 @@ async def get_me(
         background=current_user.background,
         created_at=None,
         is_admin=current_user.is_admin,
-        balance_usd=balance_usd,
-        balance_tokens=balance_tokens,
     )
 
 

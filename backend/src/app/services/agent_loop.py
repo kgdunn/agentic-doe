@@ -67,7 +67,6 @@ def _run_agent_loop(  # noqa: PLR0913
     newly_created_sims: list[dict[str, Any]] | None = None,
     force_reveal: bool = False,
     timer: TurnTimer | None = None,
-    byok_used: bool = False,
 ) -> dict[str, Any]:
     """Synchronous agent loop executed in a background thread.
 
@@ -153,7 +152,6 @@ def _run_agent_loop(  # noqa: PLR0913
                 response.model,
                 usage.input_tokens,
                 usage.output_tokens,
-                byok_used=byok_used,
             )
             response_meta = {
                 "input_tokens": usage.input_tokens,

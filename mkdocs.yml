@@ -62,9 +62,8 @@ nav:
       - Monorepo Rationale: architecture/monorepo.md
       - Tech Stack: architecture/tech-stack.md
       - Agent Tools: architecture/agent-tools.md
-      - Knowledge Graph: architecture/knowledge-graph.md
+      - DOE Knowledge Base: architecture/knowledge-graph.md
       - Reproducibility: architecture/reproducibility.md
-      - BYO Anthropic Token: architecture/byok-anthropic-token.md
   - Frontend:
       - Specification: frontend/specification.md
   - Development:

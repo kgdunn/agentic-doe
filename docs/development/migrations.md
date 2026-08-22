@@ -26,4 +26,3 @@ make migrate
 
 - All SQLAlchemy models inherit from `app.db.base.Base`
 - PostgreSQL for structured/relational data (experiments, users, results)
-- Neo4j for knowledge graph (entity relationships, domain ontology) — not managed by Alembic

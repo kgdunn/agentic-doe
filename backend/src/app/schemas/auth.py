@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -54,8 +53,6 @@ class UserResponse(BaseModel):
     background: str | None
     is_admin: bool = False
     created_at: datetime | None = None
-    balance_usd: Decimal | None = None
-    balance_tokens: int | None = None
 
     model_config = {"from_attributes": True}
 

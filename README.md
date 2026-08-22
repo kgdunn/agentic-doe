@@ -40,7 +40,7 @@ See [Prerequisites](https://kgdunn.github.io/factorial/getting-started/prerequis
 ## Project Structure
 
 ```
-backend/     FastAPI API + PostgreSQL + Neo4j
+backend/     FastAPI API + PostgreSQL
 frontend/    SvelteKit single-page application
 docs/        Project documentation (rendered at link above)
 ```

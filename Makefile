@@ -128,7 +128,6 @@ deploy: deploy-preflight deploy-up deploy-migrate
 	@echo "===== Deploy complete! ====="
 	@echo "  Backend:  http://localhost:8000"
 	@echo "  Frontend: http://localhost:3000"
-	@echo "  Neo4j:    http://localhost:7474"
 	@echo "  Postgres: localhost:5432"
 	@echo "============================"
 

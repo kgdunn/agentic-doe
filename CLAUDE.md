@@ -4,9 +4,9 @@
 
 **Factorial** is a monorepo containing the backend API (FastAPI) and frontend (SvelteKit) for a conversational, LLM-assisted web application that helps users design, run, and analyze scientific experiments using Design of Experiments (DOE) methodology.
 
-The actual statistical analysis tools live in a **separate package**: [`process-improve`](https://github.com/kgdunn/process-improve). That package provides PCA, PLS, factorial designs, response surface methodology, control charts, and more. The backend calls those tools via LangGraph agent orchestration (not yet implemented).
+The actual statistical analysis tools live in a **separate package**: [`process-improve`](https://github.com/kgdunn/process-improve). That package provides PCA, PLS, factorial designs, response surface methodology, control charts, and more. The backend calls those tools through the agent loop in `services/agent_loop.py`.
 
-For full system architecture (agent tools, knowledge graph schema, deployment), see `docs/architecture/` (split across `overview.md`, `monorepo.md`, `tech-stack.md`, `agent-tools.md`, `knowledge-graph.md`).
+For full system architecture (agent tools, DOE knowledge base, deployment), see `docs/architecture/` (split across `overview.md`, `monorepo.md`, `tech-stack.md`, `agent-tools.md`, `knowledge-graph.md`).
 For frontend UI/UX spec (pages, components, streaming protocol), see `docs/frontend/specification.md`.
 For VPS deployment guide, see `docs/deployment/vps-guide.md`.
 Documentation is built with MkDocs and deployed to GitHub Pages.
@@ -24,7 +24,6 @@ Documentation is built with MkDocs and deployed to GitHub Pages.
 | ORM | SQLAlchemy 2.0 async |
 | Migrations | Alembic |
 | Primary database | PostgreSQL 16 |
-| Knowledge graph | Neo4j 5 Community Edition |
 | Config management | pydantic-settings (reads .env) |
 | Backend package manager | UV |
 | Frontend package manager | npm |
@@ -44,7 +43,6 @@ repo-root/
 │   │   ├── config.py       # Settings class (pydantic-settings)
 │   │   ├── api/v1/         # Versioned API routes
 │   │   ├── db/             # PostgreSQL layer (session, base)
-│   │   ├── graph/          # Neo4j layer
 │   │   ├── models/         # SQLAlchemy ORM models
 │   │   ├── schemas/        # Pydantic request/response schemas
 │   │   └── services/       # Business logic
@@ -113,7 +111,7 @@ If you catch a drift between `config.py`, `.env.example`, and the deployment doc
 - **Linting**: ruff with rules E, W, F, I, N, UP, B, S, T20, SIM
 - **Pre-commit check**: before committing, always run **both** `ruff check src/ tests/` **and** `ruff format --check src/ tests/` from `backend/`. CI runs both and will fail if either reports issues. Use `ruff format src/ tests/` to auto-fix formatting. Install the pre-commit hook once with `pre-commit install` at the repo root to get the same checks on every local commit.
 - **Imports**: sorted by ruff (isort-compatible), `app` is first-party
-- **Async-first**: all database operations use async drivers (asyncpg for PostgreSQL, neo4j async for Neo4j)
+- **Async-first**: all database operations use async drivers (asyncpg for PostgreSQL)
 - **src layout**: code lives in `backend/src/app/`, imported as `from app.xxx import yyy`
 - **Versioned API**: all routes under `/api/v1/` prefix, new versions get `/api/v2/` etc.
 - **Dependency injection**: use FastAPI's `Depends()` for database sessions, auth, etc.
@@ -134,7 +132,6 @@ If you catch a drift between `config.py`, `.env.example`, and the deployment doc
 ### Database
 
 - PostgreSQL for structured/relational data (experiments, users, results)
-- Neo4j for knowledge graph (entity relationships, domain ontology, RAG)
 - Alembic for PostgreSQL schema migrations (runs from `backend/` directory)
 - All SQLAlchemy models inherit from `app.db.base.Base`
 - **Single initial migration**: the schema lives in one forward-only revision (`backend/alembic/versions/0001_initial_schema.py`). Any future schema change is a **new** Alembic revision that chains on top of it. Do not edit `0001_initial_schema.py` in place. Until the first production release, prefer to extend that initial revision directly rather than accumulating tiny migrations. No transition columns, dual-write shims, or "kept for one release" cruft — break the schema cleanly.
@@ -177,7 +174,7 @@ This is load-bearing: short-circuiting the walkthrough defeats the whole point o
 
 ### Testing
 
-- **Backend**: `APP_ENV=testing` skips the Neo4j connectivity check at startup, but the suite **does** require a running test Postgres on port 5433 (`docker compose up -d postgres-test`). The conftest runs `alembic upgrade head` against it and wraps each test in a rolled-back transaction. See `docs/development/testing-database.md`.
+- **Backend**: the suite requires a running test Postgres on port 5433 (`docker compose up -d postgres-test`). The conftest runs `alembic upgrade head` against it and wraps each test in a rolled-back transaction. See `docs/development/testing-database.md`.
 - **Frontend**: vitest for unit tests, Playwright for E2E (when added)
 - Run backend tests: `make test`
 

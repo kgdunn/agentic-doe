@@ -157,3 +157,67 @@ What is **not** yet wired and should follow up:
       `asyncio.Queue` (or a thread-safe bridge) so the SSE generator wakes
       on the next event instead of polling. Worth measuring first via the
       timing log to confirm the poll latency is actually visible.
+
+## Gutting the pre-launch scaffolding (PR #142)
+
+Factorial never launched, and roughly half the backend was infrastructure
+built for a user base that does not exist. PR #142 removed the first tranche.
+
+Landed:
+
+- [x] Neo4j (`app/graph/`, the container, volume, healthcheck, three settings
+      and the startup connectivity check). The DOE knowledge it was meant to
+      hold lives upstream in `process_improve.experiments.knowledge` as
+      versioned YAML.
+- [x] GeoIP (`geoip_service`, `GEOIP_COUNTRY_DB_PATH`, the `maxminddb`
+      dependency).
+- [x] BYOK in full: four services, the credentials-history table, six columns
+      on `users`, two on `sessions`, `messages.byok_used`, the crypto
+      dependencies, the frontend section and badge, and the docs page.
+      Migration `0012`.
+- [x] The hosted MCP REST shim, `tool_budget`, and the `tool_usage` table.
+      Migration `0013`.
+
+Still to remove, in rough order of value:
+
+- [x] Balance / metering: `balance_service`, `user_balance`, the admin
+      top-up endpoint and UI, and the balance fields on `/auth/me`.
+      Migration `0014`. `pricing` and the per-message cost columns are
+      deliberately **kept**: they are telemetry, not billing, and they answer
+      "what is the agent spending per turn" whether or not anyone is charged.
+- [ ] Invite-based signup: `signup_service`, `setup_token_service`,
+      `signup_requests`, `setup_tokens`, the admin approve/reject endpoints
+      and the `/register` flow. Replace with a waitlist row plus
+      admin-created accounts, or magic-link login.
+- [ ] The sqladmin browser (`app/admin/`, `mount_admin`, `itsdangerous`,
+      the separate admin session cookie) and the `admin_events` table with
+      its hourly LLM-performance snapshot loop in `main.py`.
+- [ ] `anthropic_status` (244 LOC) feeds the public `/health/llm` banner.
+      Keep or drop is a product call, not scaffolding: decide with the user.
+- [ ] ~~`simulator_interception`, `turn_timing`~~ - **retired 2026-08-07,
+      do not remove these.** Listed here in haste; both turn out to be
+      load-bearing. `simulator_interception` provides the `pre_dispatch` /
+      `post_dispatch` hooks the agent loop uses to drive the fake-data
+      simulator, which is a real teaching feature, not scaffolding.
+      `turn_timing` writes `logs/timing.jsonl`, which the "Chat agent latency"
+      items below explicitly depend on having a few weeks of data from.
+
+**Do not remove `roles`.** It looks like RBAC and is not: `is_admin` is the
+RBAC flag, while the `roles` table holds the user's *professional profile*
+(`chemical_engineer`, ...) which is interpolated into the agent system prompt
+as `user_background` (see `_ALLOWED_BACKGROUND_RE` in `agent_service.py`).
+Dropping it would degrade the agent's personalisation. This was in the
+original plan for PR #142 and was removed from it after reading the code.
+
+## Second distribution channel (process-improve #485)
+
+- [ ] Once `doe-designer` ships, decide what the hosted app offers that the
+      skill does not, and cut the rest. Current answer: persistence across
+      sessions, results entry by someone without a Claude account, sharing,
+      and the reproducible-export bundle.
+- [ ] Reproduce the Vazquez et al. (2026) benchmark (36 tasks, 8/16/32 runs,
+      4-26 factors) against Claude plus the process-improve tools, now that
+      `moment_aberration` can score any two-level matrix. Expected result is
+      100% minimum aberration on every task, because the design comes from a
+      catalogue rather than from the model. Good launch material for both
+      channels.

@@ -27,9 +27,8 @@ from app.schemas.auth import (
     PasswordResetValidateResponse,
     UserResponse,
 )
-from app.services import balance_service, byok_session_service, session_service, setup_token_service
+from app.services import session_service, setup_token_service
 from app.services.auth_service import hash_password, verify_password
-from app.services.byok_service import BYOKDecryptionError
 from app.services.email_service import send_setup_email
 
 logger = logging.getLogger(__name__)
@@ -85,13 +84,6 @@ async def complete_setup(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from None
 
-    # BYOK: a setup/reset flow does not have the OLD password in scope,
-    # so the wrapped DEK is unrecoverable. Mark it orphaned so the UI
-    # prompts the user to re-enrol their API key on next chat. No-op
-    # for users without an active enrollment (the common path,
-    # including every first-time-setup admin).
-    byok_session_service.orphan_dek(user)
-
     new_session = await session_service.create_session(
         db,
         user_id=user.id,
@@ -104,7 +96,6 @@ async def complete_setup(
         csrf_token=new_session.csrf_token,
     )
 
-    balance = await balance_service.get_balance(db, user.id)
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -112,8 +103,6 @@ async def complete_setup(
         background=user.role.name if user.role_id and user.role else None,
         is_admin=user.is_admin,
         created_at=None,
-        balance_usd=balance.balance_usd if balance else None,
-        balance_tokens=balance.balance_tokens if balance else None,
     )
 
 
@@ -132,17 +121,6 @@ async def change_password(
 
     if not user.password_hash or not verify_password(body.current_password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
-
-    # BYOK: re-wrap the user's DEK under a KEK derived from the new
-    # password before we replace the password hash. If the wrapped DEK
-    # is unreadable (corrupt blob, AAD mismatch), fall through to
-    # marking the BYOK row orphaned — the password change should still
-    # succeed; the user will simply have to re-enrol their API key.
-    try:
-        byok_session_service.rewrap_dek_on_password_change(user, body.current_password, body.new_password)
-    except BYOKDecryptionError:
-        logger.exception("BYOK rewrap failed during password change; orphaning DEK (user=%s)", user.id)
-        byok_session_service.orphan_dek(user)
 
     user.password_hash = hash_password(body.new_password)
     return {"message": "Password updated"}

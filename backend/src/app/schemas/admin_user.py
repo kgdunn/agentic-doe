@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from ipaddress import IPv4Address, IPv6Address
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.signup import RoleSummary
 
@@ -27,10 +27,6 @@ class AdminUserDetail(BaseModel):
     last_login_ip: str | None = None
     country: str | None = None
     timezone: str | None = None
-
-    # Balance (prepaid). None when no user_balances row exists yet.
-    balance_usd: Decimal | None = None
-    balance_tokens: int | None = None
 
     # Lifetime LLM spend + usage (zero when the user has no conversations).
     total_cost_usd: Decimal = Decimal("0")
@@ -88,24 +84,3 @@ class AdminUserResetPasswordResponse(BaseModel):
 
     message: str
     url: str
-
-
-class AdminBalanceTopUpRequest(BaseModel):
-    """Admin top-up payload for a user's balance."""
-
-    usd: Decimal = Field(default=Decimal("0"), ge=0, decimal_places=4)
-    tokens: int = Field(default=0, ge=0)
-
-    @model_validator(mode="after")
-    def _at_least_one_positive(self) -> AdminBalanceTopUpRequest:
-        if self.usd == 0 and self.tokens == 0:
-            raise ValueError("Provide a non-zero usd or tokens amount")  # noqa: TRY003
-        return self
-
-
-class AdminBalanceResponse(BaseModel):
-    """Current balance snapshot for a user."""
-
-    user_id: uuid.UUID
-    balance_usd: Decimal
-    balance_tokens: int

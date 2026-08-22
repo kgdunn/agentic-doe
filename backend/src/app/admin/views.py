@@ -22,9 +22,7 @@ from app.models.role import Role
 from app.models.setup_token import SetupToken
 from app.models.signup_request import SignupRequest
 from app.models.simulator import Simulator
-from app.models.tool_usage import ToolUsage
 from app.models.user import User
-from app.models.user_balance import UserBalance
 from app.models.user_feedback import UserFeedback
 
 
@@ -116,20 +114,6 @@ class SetupTokenAdmin(ReadOnlyView, model=SetupToken):
     column_details_exclude_list = [SetupToken.token]
     column_sortable_list = [SetupToken.created_at, SetupToken.expires_at, SetupToken.used_at]
     column_default_sort = [(SetupToken.created_at, True)]
-
-
-class UserBalanceAdmin(ReadOnlyView, model=UserBalance):
-    name = "User balance"
-    name_plural = "User balances"
-    category = "Identity"
-    icon = "fa-solid fa-coins"
-    column_list = [
-        UserBalance.user_id,
-        UserBalance.balance_usd,
-        UserBalance.balance_tokens,
-        UserBalance.updated_at,
-    ]
-    column_sortable_list = [UserBalance.balance_usd, UserBalance.balance_tokens, UserBalance.updated_at]
 
 
 class ConversationAdmin(ReadOnlyView, model=Conversation):
@@ -318,22 +302,6 @@ class AdminEventAdmin(ReadOnlyView, model=AdminEvent):
     }
 
 
-class ToolUsageAdmin(ReadOnlyView, model=ToolUsage):
-    name = "Tool usage (daily)"
-    name_plural = "Tool usage (daily)"
-    category = "Operations"
-    icon = "fa-solid fa-gauge-high"
-    column_list = [
-        ToolUsage.user_id,
-        ToolUsage.day,
-        ToolUsage.cpu_seconds_used,
-        ToolUsage.call_count,
-        ToolUsage.updated_at,
-    ]
-    column_sortable_list = [ToolUsage.day, ToolUsage.cpu_seconds_used, ToolUsage.call_count]
-    column_default_sort = [(ToolUsage.day, True)]
-
-
 class UserFeedbackAdmin(ReadOnlyView, model=UserFeedback):
     name = "User feedback"
     name_plural = "User feedback"
@@ -359,7 +327,6 @@ ALL_VIEWS: list[type[ReadOnlyView]] = [
     RoleAdmin,
     SignupRequestAdmin,
     SetupTokenAdmin,
-    UserBalanceAdmin,
     ConversationAdmin,
     MessageAdmin,
     ToolCallAdmin,
@@ -368,6 +335,5 @@ ALL_VIEWS: list[type[ReadOnlyView]] = [
     ExperimentShareAdmin,
     SimulatorAdmin,
     AdminEventAdmin,
-    ToolUsageAdmin,
     UserFeedbackAdmin,
 ]

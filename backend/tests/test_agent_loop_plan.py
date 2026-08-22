@@ -3,7 +3,7 @@ into structured ``plan`` / ``plan_update`` SSE events and emits coarse
 ``phase`` events around LLM calls and real tool calls.
 
 Exercises the synchronous loop directly with a stub Anthropic client so
-no network / Postgres / Neo4j is needed.
+no network / Postgres is needed.
 """
 
 from __future__ import annotations

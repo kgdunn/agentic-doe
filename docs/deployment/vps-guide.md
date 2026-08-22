@@ -2,7 +2,7 @@
 
 The production instance of this application runs at **[factori.al](https://factori.al)**. The instructions below are written generically so you can deploy to your own domain.
 
-Deploy the monorepo (FastAPI + SvelteKit + PostgreSQL + Neo4j) to any Linux VPS or cloud server running Ubuntu 24.04. Recommended minimum: 4 vCPU, 8GB RAM. All services are containerized via `docker-compose.yml`.
+Deploy the monorepo (FastAPI + SvelteKit + PostgreSQL) to any Linux VPS or cloud server running Ubuntu 24.04. Recommended minimum: 4 vCPU, 8GB RAM. All services are containerized via `docker-compose.yml`.
 
 **Architecture overview:**
 
@@ -10,8 +10,8 @@ Deploy the monorepo (FastAPI + SvelteKit + PostgreSQL + Neo4j) to any Linux VPS 
 Browser ──► Caddy (:80/:443) ──┬──► Frontend (nginx :3000) ──► SvelteKit SPA
                                └──► Backend (uvicorn :8000) ──► FastAPI
                                         │          │
-                                   PostgreSQL    Neo4j
-                                    (:5432)    (:7474/:7687)
+                                   PostgreSQL
+                                    (:5432)
 ```
 
 ---
@@ -75,7 +75,7 @@ sudo ufw enable
 sudo ufw status
 ```
 
-> **Note:** Database ports (5432, 7474, 7687) are NOT opened in UFW. The `docker-compose.yml` binds them to `127.0.0.1` so they are only accessible from the server itself.
+> **Note:** The database port (5432) is NOT opened in UFW. The `docker-compose.yml` binds it to `127.0.0.1` so it is only accessible from the server itself.
 
 ---
 
@@ -187,10 +187,6 @@ POSTGRES_DB=doe_db
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
-# Neo4j
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=<PASTE_SECOND_GENERATED_PASSWORD>
 
 # Anthropic — required for the agent loop
 ANTHROPIC_API_KEY=sk-ant-...
@@ -226,12 +222,6 @@ SMTP_USE_TLS=true
 # or a password-reset link stays valid.
 INVITE_TOKEN_EXPIRE_HOURS=72
 
-# GeoIP — optional. Path to a MaxMind GeoLite2-Country.mmdb file used to
-# resolve login IPs into ISO-3166 country codes for the admin Users panel.
-# Download from https://www.maxmind.com/ (free account required) and drop the
-# .mmdb file on the VPS. If this is empty or the file is missing, country
-# lookup is silently skipped — logins still work. Refresh the file monthly.
-GEOIP_COUNTRY_DB_PATH=/opt/factorial/geoip/GeoLite2-Country.mmdb
 
 # Per-turn chat timing log (engineering debugging only). The backend
 # writes one JSON Lines record per phase / API call / tool call /
@@ -263,7 +253,7 @@ chmod 600 .env
 
 ## Phase 5: Security — Port Bindings
 
-The `docker-compose.yml` already binds database ports to `127.0.0.1` (localhost only), preventing direct internet access to PostgreSQL and Neo4j even if UFW is misconfigured.
+The `docker-compose.yml` already binds database ports to `127.0.0.1` (localhost only), preventing direct internet access to PostgreSQL even if UFW is misconfigured.
 
 Verify by checking `docker-compose.yml`:
 
@@ -273,10 +263,6 @@ postgres:
   ports:
     - "127.0.0.1:5432:5432"
 
-neo4j:
-  ports:
-    - "127.0.0.1:7474:7474"
-    - "127.0.0.1:7687:7687"
 ```
 
 The backend (`app`) and frontend services also bind to `127.0.0.1` — all external traffic goes through Caddy (set up in Phase 9).
@@ -290,14 +276,13 @@ The backend (`app`) and frontend services also bind to `127.0.0.1` — all exter
 ### 6.0 — Check for port conflicts
 
 ```bash
-sudo ss -tlnp | grep -E ':(8000|3000|5432|7474|7687)\b'
+sudo ss -tlnp | grep -E ':(8000|3000|5432)\b'
 ```
 
 If anything is listening, stop it:
 
 | Cause                                                          | Fix                                                                   |
 | -------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Standalone Neo4j                                               | `sudo systemctl stop neo4j && sudo systemctl disable neo4j`           |
 | Standalone PostgreSQL                                          | `sudo systemctl stop postgresql && sudo systemctl disable postgresql` |
 | Previous Docker attempt                                        | `docker compose down --remove-orphans`                                |
 | Ghost Docker state (ss shows nothing but Docker says "in use") | See 6.0a below                                                        |
@@ -335,14 +320,12 @@ All 4 services should show **Up** (databases should show **healthy**).
 ```bash
 docker compose logs app        # Backend
 docker compose logs postgres   # PostgreSQL
-docker compose logs neo4j      # Neo4j
 docker compose logs frontend   # Frontend/nginx
 ```
 
 **Expected:**
 
 - postgres: "database system is ready to accept connections"
-- neo4j: "Started." or "Bolt enabled"
 - app: "Uvicorn running on http://0.0.0.0:8000"
 - frontend: nginx startup (no errors)
 
@@ -378,11 +361,10 @@ curl -s http://localhost:8000/api/v1/health | python3 -m json.tool
 
 ### 8.2 — Databases
 
-> **Note:** PostgreSQL and Neo4j run **inside Docker containers**, not on the VPS host. There is no `psql` or `cypher-shell` binary on the VPS itself — running `psql` directly at the shell will fail with `command not found`. Always invoke them via `docker compose exec <service> ...` as shown below. This also means you don't need to install the `postgresql-client` or `cypher-shell` packages on the host.
+> **Note:** PostgreSQL runs **inside a Docker container**, not on the VPS host. There is no `psql` binary on the VPS itself — running `psql` directly at the shell will fail with `command not found`. Always invoke it via `docker compose exec postgres ...` as shown below. This also means you don't need to install the `postgresql-client` package on the host.
 
 ```bash
 docker compose exec postgres psql -U doe_user -d doe_db -c "SELECT version();"
-docker compose exec neo4j cypher-shell -u neo4j -p '<YOUR_NEO4J_PASSWORD>' "RETURN 1"
 ```
 
 To open an interactive `psql` session, drop the `-c "..."`:
@@ -402,7 +384,7 @@ make logs-app         # backend (FastAPI) only
 make logs-frontend    # frontend (nginx) only
 ```
 
-Each shows the last 100 lines and then follows. The underlying command is `docker compose logs -f --tail=100 <service>` if you prefer to invoke it directly or add other services (e.g. `postgres`, `neo4j`).
+Each shows the last 100 lines and then follows. The underlying command is `docker compose logs -f --tail=100 <service>` if you prefer to invoke it directly or add other services (e.g. `postgres`).
 
 ---
 
@@ -623,7 +605,7 @@ For production use, the next phase describes a zero-downtime variant.
 
 ## Phase 13b: Zero-Downtime Redeploy (Blue-Green)
 
-Run two backend containers (`app-blue` on `:8000`, `app-green` on `:8001`) alongside the shared Postgres + Neo4j + frontend. Only one colour is "live" at a time — Caddy's `reverse_proxy` points at whichever port the deploy script writes into `/etc/caddy/active_backend.caddy`. Deploys build the idle colour, health-check it, run migrations, flip Caddy, and drain the old colour. Existing SSE streams on the old colour finish their turn during the drain window; new requests go to the new colour immediately.
+Run two backend containers (`app-blue` on `:8000`, `app-green` on `:8001`) alongside the shared Postgres + frontend. Only one colour is "live" at a time — Caddy's `reverse_proxy` points at whichever port the deploy script writes into `/etc/caddy/active_backend.caddy`. Deploys build the idle colour, health-check it, run migrations, flip Caddy, and drain the old colour. Existing SSE streams on the old colour finish their turn during the drain window; new requests go to the new colour immediately.
 
 ### 13b.1 — One-time host setup
 
@@ -802,19 +784,6 @@ Quick ad-hoc commands (once the scripts are installed and credentials are config
 ./scripts/backup-postgres.sh --dry-run
 ```
 
-### Neo4j
-
-> Neo4j backup is **out of scope** for the current tooling. For now, use the manual snapshot below.
-
-```bash
-docker compose stop neo4j
-docker run --rm \
-  -v factorial_neo4j_data:/data \
-  -v $(pwd):/backup \
-  alpine tar czf /backup/neo4j_backup_$(date +%Y%m%d).tar.gz /data
-docker compose start neo4j
-```
-
 ### Automated daily backup (cron)
 
 Cron entries are version-controlled at [`deploy/cron/doe-backup.cron`](https://github.com/kgdunn/factorial/blob/main/deploy/cron/doe-backup.cron). Install with:
@@ -867,7 +836,6 @@ Log rotation is handled by [`deploy/logrotate/doe-backup`](https://github.com/kg
 | Backend crashes on startup                                           | Database not ready                                                                                          | `docker compose restart app` after 30s                                                |
 | "Connection refused" to API                                          | Backend not running                                                                                         | `docker compose ps` + `docker compose logs app`                                       |
 | Frontend shows blank page                                            | SvelteKit build failed                                                                                      | `docker compose logs frontend`                                                        |
-| Neo4j "unhealthy"                                                    | Slow startup (30s+)                                                                                         | Wait, check `docker compose logs neo4j`                                               |
 | Can't connect from browser                                           | UFW blocking port                                                                                           | `sudo ufw status` — port 80 must be open                                              |
 | `https://...` refused / `ERR_CONNECTION_REFUSED` on 443              | Caddyfile still has `:80 { ... }` (Phase 9) instead of a domain block (Phase 10) — no cert, no 443 listener | Do Phase 10 with your real domain; confirm `sudo ss -tlnp \| grep 443` after reload   |
 | Caddy log spams `dial tcp [::1]:<port>: connect: connection refused` | `reverse_proxy localhost:...` resolves to IPv6 but Docker binds IPv4 only                                   | Use `127.0.0.1:<port>` in Caddyfile, then `sudo systemctl reload caddy`               |

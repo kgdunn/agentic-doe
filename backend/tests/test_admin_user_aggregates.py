@@ -10,7 +10,6 @@ from app.models.conversation import Conversation
 from app.models.experiment import Experiment
 from app.models.signup_request import SignupRequest
 from app.models.user import User
-from app.models.user_balance import UserBalance
 from app.models.user_feedback import UserFeedback
 from app.services import admin_service
 
@@ -33,11 +32,10 @@ async def test_list_users_returns_zeroed_aggregates_for_new_user(db_session: Asy
     assert agg.feedback_count == 0
     assert agg.open_experiments == 0
     assert agg.avg_runs_per_experiment is None
-    assert agg.balance_usd is None
     assert agg.signup_status is None
 
 
-async def test_list_users_rolls_up_conversation_feedback_experiment_balance_signup(
+async def test_list_users_rolls_up_conversation_feedback_experiment_signup(
     db_session: AsyncSession,
 ) -> None:
     user = User(
@@ -69,7 +67,6 @@ async def test_list_users_rolls_up_conversation_feedback_experiment_balance_sign
             Experiment(user_id=user.id, status="draft", results_data=[{"r": 1}, {"r": 2}]),
             Experiment(user_id=user.id, status="draft", results_data=[{"r": 1}, {"r": 2}, {"r": 3}, {"r": 4}]),
             Experiment(user_id=user.id, status="completed", results_data=[{"r": 1}]),
-            UserBalance(user_id=user.id, balance_usd=Decimal("10.0000"), balance_tokens=5_000_000),
             SignupRequest(
                 email="heavy@example.com",
                 use_case="testing",
@@ -94,9 +91,6 @@ async def test_list_users_rolls_up_conversation_feedback_experiment_balance_sign
     assert agg.avg_runs_per_experiment is not None
     # (2 + 4 + 1) / 3 across ALL experiments, including the completed one
     assert abs(agg.avg_runs_per_experiment - (7 / 3)) < 1e-6
-
-    assert agg.balance_usd == Decimal("10.0000")
-    assert agg.balance_tokens == 5_000_000
 
     assert agg.signup_status == "registered"
     assert agg.disclaimers_accepted is True

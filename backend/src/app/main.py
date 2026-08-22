@@ -13,7 +13,6 @@ from app.api.rate_limit import limiter
 from app.api.v1.router import api_v1_router
 from app.config import settings
 from app.db.session import engine
-from app.graph.neo4j_driver import neo4j_driver
 from app.logging_filters import install_log_injection_guard
 from app.services.anthropic_status import _llm_performance_snapshot_loop
 from app.services.exceptions import ToolExecutionError
@@ -30,7 +29,6 @@ async def lifespan(app: FastAPI):
     if settings.app_env != "testing":
         async with engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
-        await neo4j_driver.verify_connectivity()
 
     # Background task: log an LLM-performance rollup to admin_events
     # approximately hourly. Skip in testing to keep tests hermetic.
@@ -49,7 +47,6 @@ async def lifespan(app: FastAPI):
 
     if settings.app_env != "testing":
         await engine.dispose()
-        await neo4j_driver.close()
 
 
 # Disable OpenAPI docs in production to reduce attack surface.

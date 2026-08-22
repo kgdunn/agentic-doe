@@ -3,7 +3,6 @@
     getAdminUsers,
     patchAdminUser,
     postResetUserPassword,
-    postTopUpBalance,
     type AdminUser,
   } from '$lib/api/adminUsers';
   import { getRoles, type Role } from '$lib/api/roles';
@@ -23,9 +22,6 @@
   let expandedId = $state<string | null>(null);
 
   // Per-user top-up form state, keyed by user id.
-  let topUpUsd = $state<Record<string, string>>({});
-  let topUpTokens = $state<Record<string, string>>({});
-  let topUpBusy = $state<Record<string, boolean>>({});
 
   let currentUserId = $derived(authState.user?.id ?? null);
 
@@ -114,32 +110,6 @@
     }
   }
 
-  async function submitTopUp(u: AdminUser) {
-    error = null;
-    info = null;
-    const usd = (topUpUsd[u.id] ?? '').trim();
-    const tokensStr = (topUpTokens[u.id] ?? '').trim();
-    const tokens = tokensStr === '' ? 0 : Number(tokensStr);
-    if ((usd === '' || usd === '0') && (!tokens || tokens <= 0)) {
-      error = 'Enter a dollar amount or a token count to credit.';
-      return;
-    }
-    topUpBusy[u.id] = true;
-    try {
-      const res = await postTopUpBalance(u.id, {
-        usd: usd === '' ? '0' : usd,
-        tokens: Number.isFinite(tokens) ? tokens : 0,
-      });
-      mergeUpdate(u.id, { balance_usd: res.balance_usd, balance_tokens: res.balance_tokens });
-      info = `Topped up ${u.email}. New balance: $${res.balance_usd} / ${res.balance_tokens.toLocaleString()} tokens.`;
-      topUpUsd[u.id] = '';
-      topUpTokens[u.id] = '';
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Top-up failed';
-    } finally {
-      topUpBusy[u.id] = false;
-    }
-  }
 
   function toggleExpand(id: string) {
     expandedId = expandedId === id ? null : id;
@@ -199,7 +169,7 @@
       <div>
         <h2 class="text-lg font-semibold text-gray-900">Users</h2>
         <p class="mt-1 text-sm text-gray-500">
-          Activity, spend, balances, and lifecycle state. Expand a row for details or to top up balance.
+          Activity, spend, and lifecycle state. Expand a row for details.
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -246,7 +216,6 @@
               <th class="px-3 py-2">Geo</th>
               <th class="px-3 py-2">Last login</th>
               <th class="px-3 py-2 text-right">Spend</th>
-              <th class="px-3 py-2 text-right">Balance</th>
               <th class="px-3 py-2"></th>
             </tr>
           </thead>
@@ -307,9 +276,6 @@
                 <td class="px-3 py-2 text-right text-xs text-gray-700">
                   {formatCost(u.total_markup_cost_usd)}
                 </td>
-                <td class="px-3 py-2 text-right text-xs text-gray-700">
-                  {formatCost(u.balance_usd)}
-                </td>
                 <td class="px-3 py-2 text-right">
                   <button
                     onclick={() => toggleExpand(u.id)}
@@ -323,7 +289,7 @@
 
               {#if expandedId === u.id}
                 <tr class="bg-gray-50/60">
-                  <td colspan="9" class="px-6 py-4">
+                  <td colspan="8" class="px-6 py-4">
                     <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
                       <dl class="space-y-1 text-xs">
                         <dt class="font-medium text-gray-500 uppercase">Joined</dt>
@@ -375,43 +341,6 @@
                     </div>
 
                     <div class="mt-5 flex flex-wrap items-end gap-3 border-t border-gray-200 pt-4">
-                      <div>
-                        <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                          Top up balance
-                        </div>
-                        <div class="text-xs text-gray-500">
-                          Current: {formatCost(u.balance_usd)} · {formatTokens(u.balance_tokens)} tokens
-                        </div>
-                      </div>
-                      <label class="flex flex-col text-xs">
-                        <span class="text-gray-500">Add $USD</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="0.00"
-                          bind:value={topUpUsd[u.id]}
-                          class="w-28 rounded-md border border-gray-300 px-2 py-1 text-xs"
-                        />
-                      </label>
-                      <label class="flex flex-col text-xs">
-                        <span class="text-gray-500">Add tokens</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1000"
-                          placeholder="0"
-                          bind:value={topUpTokens[u.id]}
-                          class="w-32 rounded-md border border-gray-300 px-2 py-1 text-xs"
-                        />
-                      </label>
-                      <button
-                        onclick={() => submitTopUp(u)}
-                        disabled={topUpBusy[u.id]}
-                        class="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-                      >
-                        {topUpBusy[u.id] ? 'Applying...' : 'Apply top-up'}
-                      </button>
                       <button
                         onclick={() => issueReset(u)}
                         class="ml-auto text-xs text-primary hover:underline"
