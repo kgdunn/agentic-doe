@@ -221,3 +221,69 @@ original plan for PR #142 and was removed from it after reading the code.
       100% minimum aberration on every task, because the design comes from a
       catalogue rather than from the model. Good launch material for both
       channels.
+
+## Design comparison evaluator
+
+Side-by-side design comparison: designs as columns, evaluation metrics as rows.
+
+- [ ] `POST /designs/compare` — takes factor specs plus a list of candidate design
+      requests, generates each, runs `evaluate_design` over a shared metric list,
+      and returns a metric-by-design grid. Saved experiments are a special case
+      (pass ids instead of specs), not the primary shape: the useful moment is
+      *before* runs are committed, comparing "8-run vs 16-run vs DSD" for the
+      same factors.
+- [ ] Frontend `DesignComparisonTable.svelte`. Metrics down, designs across.
+      Highlight the winner per row.
+- [ ] **Mark metrics that are not comparable across sizes.** D-efficiency across
+      different run counts flatters the bigger design almost by construction.
+      `moment_aberration` already refuses cross-size comparison (`is_better_than`
+      raises); the table must be equally honest rather than quietly ranking.
+
+## Partial-results monitoring ("the reading strip")
+
+An agentic monitoring surface for a design whose results are still arriving.
+Mockup and settled spec: https://claude.ai/code/artifact/5890310e-fcb3-46e9-a509-287a04fddc06
+
+Backend:
+
+- [ ] Partial-analysis service: given a design plus the results entered so far,
+      report (a) what is estimable now, (b) what the next N runs would make
+      estimable, (c) what must not be concluded yet. Three things make this
+      statistically non-trivial and they are the whole point:
+      - the model may not be estimable at all yet (rank-deficient model matrix)
+        and must say so rather than returning a confident fit;
+      - a partial set is **not a random subset** — runs arrive in run order, so
+        any trend is confounded with time;
+      - the design's orthogonality only exists once it is complete.
+- [ ] **Read the `included` flag.** Already recorded per results row (PR #119) and
+      still ignored by the analysis path. Excluding a suspect run is exactly what
+      the strip's alert state offers, so the two belong in one piece of work.
+      (Supersedes the older standalone item above.)
+- [ ] **Persist the reading, do not compute it on demand.** Written alongside the
+      experiment whenever results change. Two reasons: owner and viewer then see
+      the same words, and it keeps tool execution off the unauthenticated public
+      share route.
+- [ ] Expose it on `shares_public.py` so viewers get it too.
+
+Frontend:
+
+- [ ] `ReadingStrip.svelte` on `/experiments/[id]`, between the design matrix and
+      the results table. States: silent / collapsed / expanded / alert.
+      `SystemBanner.svelte` is the existing precedent for the shape.
+- [ ] Mobile: expanded is a **bottom sheet**, not an inline expansion, so actions
+      sit under a thumb. Dismiss by swipe; resting state is a small badge on the
+      Results header so the feature does not appear to vanish.
+
+Decisions (2026-08-22, confirmed with @kgdunn):
+
+- **Dismissal is per device** — `localStorage`, keyed to a hash of the current
+  reading, so a changed reading returns. No table, no schema change, no sync.
+  Explicitly the cheap option.
+- **Everyone sees it, viewers included.** Shared-experiment viewers get the
+  reading; the notes are the context they most need.
+- **The alert never blocks.** It flags the row and offers to exclude it; results
+  entry always succeeds. A run that breaks the pattern is sometimes just an
+  interesting result.
+- **No F2 / keyboard shortcut for now.** Click the row to expand, `Esc` to
+  dismiss. Undiscoverable, collides with screen readers and browser defaults,
+  and the resting badge is the affordance worth spending on instead.
