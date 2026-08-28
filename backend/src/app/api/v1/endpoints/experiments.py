@@ -296,8 +296,12 @@ async def export_experiment(
     acknowledge_share: bool = Query(
         False,
         description=(
-            "Required for PDF exports — confirms the owner agrees to embed "
-            "analysis plots as static images in the downloaded artifact."
+            "Enforced only for ``format=pdf``: PDF exports embed the "
+            "analysis plots as flattened static images, and the flag is "
+            "the owner's explicit acknowledgement of that snapshot before "
+            "the file is streamed. Missing or false against a PDF export "
+            "returns 400. Other formats — including ``zip`` reproducible "
+            "bundles and ``xlsx`` — ignore this flag today."
         ),
     ),
     db: AsyncSession = Depends(get_db_session),

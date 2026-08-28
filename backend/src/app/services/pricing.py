@@ -54,7 +54,7 @@ def calculate_cost(
     model: str,
     input_tokens: int,
     output_tokens: int,
-) -> dict[str, Decimal | bool]:
+) -> dict[str, Decimal]:
     """Snapshot the rates, costs, markup, and billable amount for a call."""
     input_rate, output_rate = lookup_rates(model)
     input_cost = (Decimal(input_tokens) * input_rate) / _MTOK
