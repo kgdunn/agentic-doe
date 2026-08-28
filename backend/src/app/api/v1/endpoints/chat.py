@@ -42,8 +42,20 @@ async def chat(
     """Start or continue a conversation with the DOE agent.
 
     Accepts a user message and optional ``conversation_id``.
-    Returns an SSE stream with events: ``conversation_id``, ``token``,
-    ``tool_start``, ``tool_result``, ``done``, and ``error``.
+    Returns an SSE stream. Event types emitted by ``run_chat`` and the
+    underlying agent loop include:
+
+    - ``conversation_id`` — echoed once at stream start.
+    - ``token`` — one per streamed assistant token.
+    - ``phase`` — high-level phase marker (planning, tool use, ...).
+    - ``plan`` / ``plan_update`` — the agent's structured plan and its
+      per-step revisions.
+    - ``tool_start`` / ``tool_result`` — tool invocation lifecycle.
+    - ``experiment_created`` / ``simulator_created`` — emitted when a tool
+      call materialises an Experiment or Simulator row; the client uses
+      these to hydrate side-panels.
+    - ``done`` — end of stream on the happy path.
+    - ``error`` — end of stream on an error.
     """
     return EventSourceResponse(
         run_chat(

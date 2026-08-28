@@ -178,8 +178,12 @@ async def attach_evaluation(
 ) -> Experiment | None:
     """Overwrite ``evaluation_data`` on an experiment.
 
-    Used both by the agent loop (when ``evaluate_design`` runs right after
-    ``generate_design``) and by the REST re-evaluate endpoint.
+    Called by the REST re-evaluate endpoint. The agent loop does **not**
+    reach this helper: when ``evaluate_design`` runs right after
+    ``generate_design`` in the agent loop, ``agent_service`` assigns
+    ``target.evaluation_data`` directly (see ``agent_service.py``, the
+    ``rec["tool_output"]`` line), which skips ownership re-checking that
+    this helper performs on the REST path.
     """
     experiment = await _get_owned_experiment(db, experiment_id, user_id)
     if not experiment:

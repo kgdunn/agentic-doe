@@ -389,8 +389,15 @@ async def build_reproducible_bundle(db: AsyncSession, experiment: Experiment) ->
         README.md             - build_readme(...)
         requirements.txt      - build_requirements_txt(...)
 
-    All renderers share one ``pi_version`` / ``generated_at`` / warnings
-    pair so the bundle is internally consistent.
+    ``pi_version`` (resolved once from the installed ``process_improve``)
+    is passed to every renderer that carries a version string;
+    ``generated_at`` (a single UTC timestamp) is threaded into the code
+    renderers and the README; ``warnings`` (from ``collect_warnings``) is
+    used by the README. ``build_data_file`` is a pure snapshot of the
+    Experiment's run data and takes none of the three;
+    ``build_requirements_txt`` takes ``pi_version`` only. So "all
+    renderers share the same trio" is truer for the code + README subset
+    than for ``data.xlsx`` and ``requirements.txt``.
     """
     calls = await _fetch_or_400(db, experiment, format_name=".zip")
     version = _resolve_process_improve_version()

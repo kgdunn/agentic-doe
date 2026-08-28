@@ -130,11 +130,14 @@ async def logout_all(
 ) -> Response:
     """Revoke every active session for this user; clear current cookie."""
     if current_user.family_id is not None:
-        # Revoke by user_id rather than family_id alone — a user may have
-        # multiple families if they ever logged in from cookie-cleared
-        # devices, and "sign out everywhere" should mean exactly that.
+        # Revoke this cookie's own family first — a fast wide sweep that
+        # takes out every session sharing the current cookie's rotation
+        # chain.
         await session_service.revoke_family(db, current_user.family_id)
-    # Also catch any sessions in other families belonging to this user.
+    # Then sweep every remaining session belonging to this user id — a
+    # user may have multiple families if they ever logged in from
+    # cookie-cleared devices, and "sign out everywhere" should mean
+    # exactly that: every session, in every family, for this user.
     sessions = await session_service.list_user_sessions(db, current_user.id)
     for s in sessions:
         await session_service.revoke_session(db, s.id)

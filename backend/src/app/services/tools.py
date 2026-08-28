@@ -312,6 +312,15 @@ async def execute_tool_call_async(
     Runs the synchronous call in a thread (``asyncio.to_thread``) so
     event-loop-hosted callers do not block on the subprocess result.
 
+    Parameters
+    ----------
+    tool_name, tool_input
+        Forwarded verbatim to :func:`execute_tool_call`.
+    timeout, memory_mb, safe_mode
+        Forwarded to :func:`execute_tool_call` as-is; see that function's
+        docstring for the semantics and defaults of each. Passing ``None``
+        keeps whatever default the sync call resolves.
+
     Returns
     -------
     tuple[Any, float]
