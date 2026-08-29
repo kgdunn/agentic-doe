@@ -19,7 +19,7 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
       - run: uv sync --all-extras
       - run: uv run ruff check src/ tests/
@@ -57,7 +57,7 @@ jobs:
       POSTGRES_TEST_PASSWORD: doe_password
       POSTGRES_TEST_DB: doe_test_db
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
       - run: uv sync --all-extras
       - run: uv run pytest tests/ -v --tb=short
