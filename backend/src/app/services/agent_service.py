@@ -2,7 +2,8 @@
 
 Core architecture:
     1. ``run_chat()`` is the async orchestrator called by the chat endpoint.
-    2. It launches ``_run_agent_loop()`` in a thread via ``asyncio.to_thread``.
+    2. It launches ``_run_agent_loop()`` in a background executor via
+       ``loop.run_in_executor(None, ...)`` (the default thread pool).
     3. The sync loop pushes SSE events to a ``queue.Queue``.
     4. ``_stream_from_queue()`` is an async generator that drains the queue
        and yields ``ServerSentEvent`` objects for ``EventSourceResponse``.
@@ -500,11 +501,16 @@ async def run_chat(
     The DB session is managed inside the generator (not via ``Depends``)
     so its lifetime matches the SSE stream.
 
-    Every SSE event yielded by this generator carries an ``id:`` of the
-    form ``{turn_id}:{sequence}`` and is persisted to ``chat_events``
-    before being yielded, so a disconnected client can replay missed
-    events via the resume endpoint using the standard SSE
-    ``Last-Event-ID`` header.
+    Non-token SSE events emitted through the internal ``emit`` helper
+    carry an ``id:`` of the form ``{turn_id}:{sequence}`` and are
+    persisted to ``chat_events`` before being yielded, so a disconnected
+    client can replay missed events via the resume endpoint using the
+    standard SSE ``Last-Event-ID`` header. Token deltas are batched and
+    persisted in one ``chat_events`` row per ``_TOKEN_BATCH_INTERVAL_S``
+    window (live delivery to the client is still one event per delta).
+    A few pre-conversation error events yielded before the conversation
+    row exists deliberately bypass ``emit`` and are neither id-tagged
+    nor persisted — there is no conversation to resume from yet.
     """
     system_prompt = _build_system_prompt(user_background, detail_level)
 
