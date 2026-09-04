@@ -179,7 +179,7 @@ async def revoke_family(db: AsyncSession, family_id: uuid.UUID) -> int:
 
 
 async def list_user_sessions(db: AsyncSession, user_id: uuid.UUID) -> list[Session]:
-    """All non-revoked, non-expired sessions for a user, newest first."""
+    """All non-revoked, non-expired sessions for a user, most recently used first."""
     now = datetime.now(UTC)
     result = await db.execute(
         select(Session)
