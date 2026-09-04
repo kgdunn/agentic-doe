@@ -1,4 +1,9 @@
-"""Authentication endpoints: login, logout, /me, sessions list."""
+"""Authentication endpoints.
+
+Routes mounted under ``/auth`` — register (returns 403 by design, direct
+registration is disabled), login, logout, logout-all, /me, list sessions,
+and per-session revoke (``DELETE /sessions/{public_id}``).
+"""
 
 from __future__ import annotations
 
