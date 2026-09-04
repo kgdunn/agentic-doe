@@ -30,9 +30,11 @@ _PROTECTED_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 async def require_csrf(request: Request) -> None:
     """Reject state-changing requests without a matching CSRF token.
 
-    Skipped for safe methods, for the API-key path (machine-to-machine,
-    no cookie involved), and for the unauthenticated public-share routes
-    which carry their own opaque tokens.
+    Skipped for safe methods and for the API-key path (machine-to-machine,
+    no cookie involved). The unauthenticated public-share routes are
+    exempted at router-mount time — they are not attached to the
+    dependency list that includes this callable — rather than being
+    branched on inside this function.
     """
     if request.method not in _PROTECTED_METHODS:
         return

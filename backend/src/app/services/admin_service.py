@@ -135,9 +135,11 @@ async def _aggregate_for_users(
 ) -> dict[uuid.UUID, UserAggregates]:
     """Batch-fetch per-user rollups for the given page of users.
 
-    Runs five small grouped queries (one per related table) rather than
-    N+1 subqueries per user. Works on both PostgreSQL (production) and
-    SQLite (tests) — no dialect-specific lateral joins.
+    Runs four small grouped queries — one over ``conversations``, one
+    over ``user_feedback``, one over ``experiments``, and one over
+    ``signup_requests`` — rather than N+1 subqueries per user. No
+    dialect-specific lateral joins, so the same code runs against
+    PostgreSQL in both production and the test suite.
     """
     if not users:
         return {}

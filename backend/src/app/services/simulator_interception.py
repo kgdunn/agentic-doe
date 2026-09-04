@@ -16,9 +16,12 @@ on state that is deliberately absent from the LLM-visible JSON schema:
   first request returns a "pending" status, the second flips
   ``confirmed=True``.
 
-All three helpers are synchronous and free of I/O so they can be called
-from inside the agent loop's thread without touching the asyncio event
-loop. They mutate the passed-in dicts, which are owned by ``run_chat``.
+Both helpers (:func:`pre_dispatch` and :func:`post_dispatch`) are
+synchronous and free of I/O so they can be called from inside the agent
+loop's thread without touching the asyncio event loop. They read and
+mutate dicts owned by ``run_chat`` (``simulator_states``,
+``reveal_counts``, ``newly_created_sims``); ``pre_dispatch`` deliberately
+does not mutate the LLM's raw ``tool_input`` — see its own docstring.
 """
 
 from __future__ import annotations
