@@ -168,7 +168,12 @@ async def admin_approve_signup(
     _admin: AuthUser = Depends(require_admin),
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, str]:
-    """Approve a signup, optionally assigning or creating a role, and send the invite."""
+    """Approve a signup, assigning or creating a role, and send the invite.
+
+    Role assignment is mandatory: the request body must supply either an
+    existing ``role_id`` or a ``new_role`` (name plus optional description);
+    passing neither is rejected with 400.
+    """
     body = body or SignupApproveRequest()
     try:
         signup = await approve_signup(
