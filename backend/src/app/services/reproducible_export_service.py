@@ -200,7 +200,7 @@ _DESIGN_SEED_KEYS = frozenset({"seed", "random_state", "random_seed"})
 
 
 def collect_warnings(calls: list[ToolCall]) -> list[str]:
-    """Inspect ToolCall rows for things that threaten bit-for-bit reproducibility.
+    """Inspect ToolCall rows for things that may threaten bit-for-bit reproducibility.
 
     Emits one line per issue for inclusion in the bundle's ``README.md``.
     Kept small and deterministic so tests can assert on exact strings.
