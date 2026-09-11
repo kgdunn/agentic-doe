@@ -500,11 +500,14 @@ async def run_chat(
     The DB session is managed inside the generator (not via ``Depends``)
     so its lifetime matches the SSE stream.
 
-    Every SSE event yielded by this generator carries an ``id:`` of the
-    form ``{turn_id}:{sequence}`` and is persisted to ``chat_events``
-    before being yielded, so a disconnected client can replay missed
-    events via the resume endpoint using the standard SSE
-    ``Last-Event-ID`` header.
+    Once the conversation has been resolved (either loaded or created
+    inside this generator), every SSE event yielded by this generator
+    carries an ``id:`` of the form ``{turn_id}:{sequence}`` and is
+    persisted to ``chat_events`` before being yielded, so a
+    disconnected client can replay missed events via the resume
+    endpoint using the standard SSE ``Last-Event-ID`` header. Any
+    events yielded before conversation resolution (for example an
+    early ``error`` on lookup) are not tagged with a sequence id.
     """
     system_prompt = _build_system_prompt(user_background, detail_level)
 
