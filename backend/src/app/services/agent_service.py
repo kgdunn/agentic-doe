@@ -297,7 +297,14 @@ async def _persist_new_messages(
     new_messages: list[dict[str, Any]],
     start_sequence: int,
 ) -> dict[str, uuid.UUID]:
-    """Persist new assistant / tool_result messages.  Returns a map of tool_use_id -> Message.id."""
+    """Persist new assistant / tool_result messages.  Returns a map of tool_use_id -> Message.id.
+
+    The ``Message.id`` values in the returned map are the in-memory
+    ORM ids that SQLAlchemy has assigned to each newly-added row;
+    depending on the mapper configuration these may still be ``None``
+    until the enclosing session is flushed, so callers that need the
+    real primary key should flush before dereferencing.
+    """
     seq = start_sequence
     tool_use_id_to_msg_id: dict[str, uuid.UUID] = {}
 
@@ -500,11 +507,14 @@ async def run_chat(
     The DB session is managed inside the generator (not via ``Depends``)
     so its lifetime matches the SSE stream.
 
-    Every SSE event yielded by this generator carries an ``id:`` of the
-    form ``{turn_id}:{sequence}`` and is persisted to ``chat_events``
-    before being yielded, so a disconnected client can replay missed
-    events via the resume endpoint using the standard SSE
-    ``Last-Event-ID`` header.
+    Once the conversation has been resolved (either loaded or created
+    inside this generator), every SSE event yielded by this generator
+    carries an ``id:`` of the form ``{turn_id}:{sequence}`` and is
+    persisted to ``chat_events`` before being yielded, so a
+    disconnected client can replay missed events via the resume
+    endpoint using the standard SSE ``Last-Event-ID`` header. Any
+    events yielded before conversation resolution (for example an
+    early ``error`` on lookup) are not tagged with a sequence id.
     """
     system_prompt = _build_system_prompt(user_background, detail_level)
 

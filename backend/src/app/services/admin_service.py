@@ -80,8 +80,10 @@ async def create_admin_shell(db: AsyncSession, email: str, display_name: str | N
 async def set_admin(db: AsyncSession, user: User, is_admin: bool) -> User:
     """Toggle ``is_admin`` on a user.
 
-    Refuses to demote the last remaining admin so the system can't lock
-    itself out.
+    Refuses to demote the last remaining admin (active or inactive) so
+    the system can't lock itself out. The guard counts admins by
+    ``is_admin`` alone; whether that admin is currently active does not
+    relax the check.
     """
     if user.is_admin and not is_admin:
         remaining = await count_admins(db)
@@ -212,7 +214,12 @@ async def _aggregate_for_users(
 
 
 async def set_active(db: AsyncSession, user: User, is_active: bool) -> User:
-    """Enable or disable a user. Won't deactivate the last remaining admin."""
+    """Enable or disable a user.
+
+    Won't deactivate the last remaining admin (active or inactive) — the
+    guard counts admins by ``is_admin`` alone, so the check applies even
+    if the sole remaining admin is currently inactive.
+    """
     if user.is_admin and not is_active:
         remaining = await count_admins(db)
         if remaining <= 1:

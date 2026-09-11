@@ -29,7 +29,9 @@ async def list_tools(
 async def execute_tool(request: ToolExecuteRequest) -> dict[str, Any]:
     """Execute a process-improve tool by name.
 
-    The tool runs in a background thread with a 300-second timeout
-    (same path as the agent chat loop).
+    The tool runs in a background thread with a wall-clock timeout that
+    is configurable via the ``TOOL_TIMEOUT_SECONDS`` setting (default
+    300 seconds). This is the same execution path as the agent chat
+    loop.
     """
     return await call_tool(request.tool_name, request.tool_input)

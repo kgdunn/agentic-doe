@@ -303,7 +303,7 @@ async def export_experiment(
     db: AsyncSession = Depends(get_db_session),
     current_user: AuthUser = Depends(require_auth),
 ) -> Response:
-    """Stream a rendered export of the experiment in the requested format."""
+    """Return a rendered export of the experiment in the requested format."""
     exp = await experiment_service.get_experiment(db, experiment_id, user_id=current_user.id)
     if not exp:
         raise HTTPException(status_code=404, detail="Experiment not found")
