@@ -42,7 +42,14 @@ async def get_simulator_by_sim_id(
     sim_id: str,
     user_id: uuid.UUID,
 ) -> Simulator | None:
-    """Return the simulator row for *sim_id*, enforcing ownership."""
+    """Return the simulator row for *sim_id*, enforcing ownership.
+
+    Ownership is enforced *after* the fetch: the row is loaded by
+    ``sim_id`` and only then checked against ``user_id``. A caller
+    with a valid ``sim_id`` but the wrong ``user_id`` therefore
+    triggers a real database read that returns nothing (``None``),
+    not a permission error at query time.
+    """
     result = await db.execute(
         select(Simulator).where(Simulator.sim_id == sim_id),
     )
