@@ -109,7 +109,12 @@ async def update_experiment(
     updates: dict[str, Any],
     user_id: uuid.UUID,
 ) -> Experiment | None:
-    """Update experiment fields. Returns None if not found or not owned."""
+    """Update experiment fields. Returns None if not found or not owned.
+
+    Keys in ``updates`` whose value is ``None`` are ignored (they do
+    not clear the field); pass an explicit sentinel or empty value if
+    the intent is to blank the field.
+    """
     experiment = await _get_owned_experiment(db, experiment_id, user_id)
     if not experiment:
         return None
