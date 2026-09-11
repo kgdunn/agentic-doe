@@ -99,7 +99,12 @@ def _iter_echarts_options(experiment: Experiment) -> list[dict[str, Any]]:
 
 
 async def _render_plots_as_data_uris(experiment: Experiment) -> list[dict[str, str]]:
-    """Pre-render each ECharts option to a PNG and return data URIs + caption."""
+    """Pre-render each ECharts option to PNG (SVG fallback), returning data URIs + title.
+
+    Playwright emits real PNG bytes; when it is unavailable the
+    renderer falls back to an inline SVG payload, and the MIME type of
+    the returned data URI reflects which one produced the bytes.
+    """
     options = _iter_echarts_options(experiment)
     rendered: list[dict[str, str]] = []
     for idx, option in enumerate(options):
