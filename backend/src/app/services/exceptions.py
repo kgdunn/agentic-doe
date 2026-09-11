@@ -13,7 +13,12 @@ class ToolExecutionError(Exception):
 
 
 class ToolInputTooLargeError(ToolExecutionError):
-    """Raised when tool input exceeds a size / cap limit before execution."""
+    """Raised when tool input is rejected for size or invalidity before execution.
+
+    Covers both the "payload too large" case and inputs that fail
+    up-front validation (shape / type / cap) prior to being dispatched
+    to the worker.
+    """
 
     http_status = 413
 
