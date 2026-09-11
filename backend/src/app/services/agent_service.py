@@ -297,7 +297,14 @@ async def _persist_new_messages(
     new_messages: list[dict[str, Any]],
     start_sequence: int,
 ) -> dict[str, uuid.UUID]:
-    """Persist new assistant / tool_result messages.  Returns a map of tool_use_id -> Message.id."""
+    """Persist new assistant / tool_result messages.  Returns a map of tool_use_id -> Message.id.
+
+    The ``Message.id`` values in the returned map are the in-memory
+    ORM ids that SQLAlchemy has assigned to each newly-added row;
+    depending on the mapper configuration these may still be ``None``
+    until the enclosing session is flushed, so callers that need the
+    real primary key should flush before dereferencing.
+    """
     seq = start_sequence
     tool_use_id_to_msg_id: dict[str, uuid.UUID] = {}
 
